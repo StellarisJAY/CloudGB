@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudGB.Core", "CloudGB.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudGB.Core.Test", "CloudGB.Core.Test\CloudGB.Core.Test.csproj", "{90C24BA7-65FE-48C4-94C3-C4983179C985}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudGB.Web", "CloudGB.Web\CloudGB.Web.csproj", "{DD08FF83-C856-40EE-AAEF-16EC9FDA7C15}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{94DCC825-FA32-40C4-8652-0379B15DCCA5}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
