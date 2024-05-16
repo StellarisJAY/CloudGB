@@ -119,6 +119,17 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x21] = new(0x21, "LD", "LD HL,nn", 12, 2, Load16);
             set[0x31] = new(0x31, "LD", "LD SP,nn", 12, 2, Load16);
 
+
+            // LDI A,(HL+)
+            set[0x2A] = new(0x2A, "LDI", "LDI A,(HL+)", 8, 0, (ctx, instr, mem) =>
+            {
+                mem.Read(ctx.HL, out byte data);
+                ctx.A = data;
+                ctx.HL += 1;
+                ctx.PC += 1;
+            });
+
+            // Stack
             // LD SP,HL
             set[0xF9] = new(0xF9, "LD", "LD SP,HL", 8, 0, (ctx, ins, mem) => { ctx.SP = ctx.HL; ctx.PC += 1; });
 
@@ -136,6 +147,39 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0xC1] = new(0xC1, "POP", "POP BC", 12, 0, Pop16);
             set[0xD1] = new(0xD1, "POP", "POP DE", 12, 0, Pop16);
             set[0xE1] = new(0xE1, "POP", "POP HL", 12, 0, Pop16);
+
+            // ALU
+            // ADD A,n
+            set[0x80] = new(0x80, "ADD", "ADD A,B", 4, 0, AddA);
+            set[0x81] = new(0x81, "ADD", "ADD A,C", 4, 0, AddA);
+            set[0x82] = new(0x82, "ADD", "ADD A,D", 4, 0, AddA);
+            set[0x83] = new(0x83, "ADD", "ADD A,E", 4, 0, AddA);
+            set[0x84] = new(0x84, "ADD", "ADD A,H", 4, 0, AddA);
+            set[0x85] = new(0x85, "ADD", "ADD A,L", 4, 0, AddA);
+            set[0x86] = new(0x86, "ADD", "ADD A,(HL)", 8, 0, AddA);
+            set[0x87] = new(0x87, "ADD", "ADD A,A", 4, 0, AddA);
+            set[0xC6] = new(0xC6, "ADD", "ADD A,n", 8, 0, AddA);
+
+            // ADC A,n
+            set[0x88] = new(0x88, "ADC", "ADC A,B", 4, 0, AdcA);
+            set[0x89] = new(0x89, "ADC", "ADC A,C", 4, 0, AdcA);
+            set[0x8A] = new(0x8A, "ADC", "ADC A,D", 4, 0, AdcA);
+            set[0x8B] = new(0x8B, "ADC", "ADC A,E", 4, 0, AdcA);
+            set[0x8C] = new(0x8C, "ADC", "ADC A,H", 4, 0, AdcA);
+            set[0x8D] = new(0x8D, "ADC", "ADC A,L", 4, 0, AdcA);
+            set[0x8E] = new(0x8E, "ADC", "ADC A,(HL)", 8, 0, AdcA);
+            set[0x8F] = new(0x8F, "ADC", "ADC A,A", 4, 0, AdcA);
+            set[0xCE] = new(0xCE, "ADC", "ADC A,n", 8, 0, AdcA);
+
+            // INC
+            set[0x04] = new(0x04, "INC", "INC B", 4, 0, Inc);
+            set[0x0C] = new(0x0C, "INC", "INC C", 4, 0, Inc);
+            set[0x14] = new(0x14, "INC", "INC D", 4, 0, Inc);
+            set[0x1C] = new(0x1C, "INC", "INC E", 4, 0, Inc);
+            set[0x24] = new(0x24, "INC", "INC H", 4, 0, Inc);
+            set[0x2C] = new(0x2C, "INC", "INC L", 4, 0, Inc);
+            set[0x34] = new(0x34, "INC", "INC (HL)", 12, 0, Inc);
+            set[0x3C] = new(0x3C, "INC", "INC A", 4, 0, Inc);
         }
 
         public static void BenchmarkOpCodes(long N)
