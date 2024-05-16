@@ -145,14 +145,68 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     memory.Write(context.HL, res);
                     break;
                 default:
-                    throw new ArgumentException($"unknown opcode:{instruction.Opcode}");
+                    throw new NotSupportedException($"unsupported opcode in inc: {instruction.Opcode,0:X2}");
             }
-            context.HalfCarryFlag = IsHalfCarry(old, res);
+            context.HalfCarryFlag = (old&0xF)==0xF;
             context.ZeroFlag = res == 0;
             context.PC += 1;
+            context.SubstractFlag = false;
         }
 
-
+        public static void Dec(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            byte old;
+            byte res;
+            switch (instruction.Opcode)
+            {
+                case 0x3D:
+                    old = context.A;
+                    context.A--;
+                    res = context.A;
+                    break;
+                case 0x05:
+                    old = context.B;
+                    context.B--;
+                    res = context.B;
+                    break;
+                case 0x0D:
+                    old = context.C;
+                    context.C--;
+                    res = context.C;
+                    break;
+                case 0x15:
+                    old = context.D;
+                    context.D--;
+                    res = context.D;
+                    break;
+                case 0x1D:
+                    old = context.E;
+                    context.E--;
+                    res = context.E;
+                    break;
+                case 0x25:
+                    old = context.H;
+                    context.H--;
+                    res = context.H;
+                    break;
+                case 0x2D:
+                    old = context.L;
+                    context.L--;
+                    res = context.L;
+                    break;
+                case 0x35:
+                    memory.Read(context.HL, out old);
+                    res = (byte)(old - 1);
+                    memory.Write(context.HL, res);
+                    break;
+                default:
+                    throw new NotSupportedException($"unsupported opcode in dec: {instruction.Opcode,0:X2}");
+            }
+            context.ZeroFlag = res == 0;
+            context.SubstractFlag = true;
+            context.PC += 1;
+            context.HalfCarryFlag = (old & 0xF) == 0;
+        }
 
         private static bool IsHalfCarry(byte old, byte res)
         {
@@ -163,5 +217,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
         {
             return old > res;
         }
+
+        
     }
 }
