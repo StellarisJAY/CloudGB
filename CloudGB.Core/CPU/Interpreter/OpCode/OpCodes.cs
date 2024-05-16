@@ -12,6 +12,11 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x76] = new(0x76, "HALT", "HALT", 4, 0, HALT);
             // JP nn
             set[0xC3] = new(0xC3, "JP", "JP nn", 12, 2, JPImm16);
+            // JR cc,n
+            set[0x20] = new(0x20, "JR", "JR NZ,n", 8, 1, JRCondition);
+            set[0x28] = new(0x28, "JR", "JR Z,n", 8, 1, JRCondition);
+            set[0x30] = new(0x30, "JR", "JR NC,n", 8, 1, JRCondition);
+            set[0x38] = new(0x38, "JR", "JR C,n", 8, 1, JRCondition);
             // LD r, n
             set[0x06] = new(0x06, "LD", "LD B,n", 8, 1, LoadImm8);
             set[0x0E] = new(0x0E, "LD", "LD C,n", 8, 1, LoadImm8);
@@ -180,6 +185,16 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x2C] = new(0x2C, "INC", "INC L", 4, 0, Inc);
             set[0x34] = new(0x34, "INC", "INC (HL)", 12, 0, Inc);
             set[0x3C] = new(0x3C, "INC", "INC A", 4, 0, Inc);
+
+            // DEC
+            set[0x05] = new(0x05, "DEC", "DEC B", 4, 0, Dec);
+            set[0x0D] = new(0x0D, "DEC", "DEC C", 4, 0, Dec);
+            set[0x15] = new(0x15, "DEC", "DEC D", 4, 0, Dec);
+            set[0x1D] = new(0x1D, "DEC", "DEC E", 4, 0, Dec);
+            set[0x25] = new(0x25, "DEC", "DEC H", 4, 0, Dec);
+            set[0x2D] = new(0x2D, "DEC", "DEC L", 4, 0, Dec);
+            set[0x35] = new(0x35, "DEC", "DEC (HL)", 12, 0, Dec);
+            set[0x3D] = new(0x3D, "DEC", "DEC A", 4, 0, Dec);
         }
 
         public static void BenchmarkOpCodes(long N)
