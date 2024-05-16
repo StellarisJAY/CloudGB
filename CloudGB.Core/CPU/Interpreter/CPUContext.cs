@@ -85,13 +85,13 @@ namespace CloudGB.Core.CPU.Interpreter
 
         private bool GetFlag(int offset)
         {
-            return (F & 1 << offset) != 0;
+            return (F & (1 << offset)) != 0;
         }
 
         private void SetFlag(int offset, bool value)
-        {
-            if (value) F |= 1 << 7;
-            else F &= (1 << 7) - 1;
+        { 
+            if (value) F |= (byte)(1 << offset);
+            else F &= (byte)(~(1 << offset));
         }
     }
 }
