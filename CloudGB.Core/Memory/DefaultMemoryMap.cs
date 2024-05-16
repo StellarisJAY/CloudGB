@@ -120,8 +120,8 @@ namespace CloudGB.Core.Memory
         bool IMemoryMap.Read16Bit(ushort address, out ushort data)
         {
             bool lowReadable = Read(address, out byte low);
-            bool highReadable = Read(address, out byte high);
-            data = (ushort)(low | (high << 8));
+            bool highReadable = Read((ushort)(address + 1), out byte high);
+            data = (ushort)(low&0xFF | (high << 8));
             return lowReadable && highReadable;
         }
 
@@ -129,7 +129,7 @@ namespace CloudGB.Core.Memory
         {
             byte low = (byte)(data & 0xFF);
             byte high = (byte)(data >> 8);
-            return Write(address, low) && Write(address, high);
+            return Write(address, low) && Write((ushort)(address + 1), high);
         }
     }
 }
