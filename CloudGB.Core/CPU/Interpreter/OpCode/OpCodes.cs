@@ -194,8 +194,24 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0xCE] = new(0xCE, "ADC", "ADC A,n", 8, 0, AdcA);
 
             // SUB A,n
+            set[0x90] = new(0x90, "SUB", "SUB A,B", 4, 0, SubA);
+            set[0x91] = new(0x91, "SUB", "SUB A,C", 4, 0, SubA);
+            set[0x92] = new(0x92, "SUB", "SUB A,D", 4, 0, SubA);
+            set[0x93] = new(0x93, "SUB", "SUB A,E", 4, 0, SubA);
+            set[0x94] = new(0x94, "SUB", "SUB A,H", 4, 0, SubA);
+            set[0x95] = new(0x95, "SUB", "SUB A,L", 4, 0, SubA);
+            set[0x96] = new(0x96, "SUB", "SUB A,(HL)", 8, 0, SubA);
+            set[0x97] = new(0x97, "SUB", "SUB A,A", 4, 0, SubA);
+            set[0xD6] = new(0xD6, "SUB", "SUB A,n", 8, 1, SubA);
             // SBC A,n
-
+            set[0x98] = new(0x98, "SBC", "SBC A,B", 4, 0, SBCA);
+            set[0x99] = new(0x99, "SBC", "SBC A,C", 4, 0, SBCA);
+            set[0x9A] = new(0x9A, "SBC", "SBC A,D", 4, 0, SBCA);
+            set[0x9B] = new(0x9B, "SBC", "SBC A,E", 4, 0, SBCA);
+            set[0x9C] = new(0x9C, "SBC", "SBC A,H", 4, 0, SBCA);
+            set[0x9D] = new(0x9D, "SBC", "SBC A,L", 4, 0, SBCA);
+            set[0x9E] = new(0x9E, "SBC", "SBC A,(HL)", 8, 0, SBCA);
+            set[0x9F] = new(0x9F, "SBC", "SBC A,A", 4, 0, SBCA);
             // INC
             set[0x04] = new(0x04, "INC", "INC B", 4, 0, Inc);
             set[0x0C] = new(0x0C, "INC", "INC C", 4, 0, Inc);

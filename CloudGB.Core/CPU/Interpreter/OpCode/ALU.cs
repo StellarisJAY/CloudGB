@@ -249,6 +249,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     context.SP += 1;
                     break;
             }
+            context.PC += 1;
         }
 
         public static void Dec16(CPUContext context, Instruction instruction, IMemoryMap memory)
@@ -268,6 +269,94 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     context.SP -= 1;
                     break;
             }
+            context.PC += 1;
+        }
+
+        public static void SubA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            byte old = context.A;
+            byte op;
+            context.SubstractFlag = true;
+            switch(instruction.Opcode)
+            {
+                case 0x97:
+                    op = context.A;
+                    break;
+                case 0x90:
+                    op = context.B;
+                    break;
+                case 0x91:
+                    op = context.C;
+                    break;
+                case 0x92:
+                    op = context.D;
+                    break;
+                case 0x93:
+                    op = context.E;
+                    break;
+                case 0x94:
+                    op = context.H;
+                    break;
+                case 0x95:
+                    op = context.L;
+                    break;
+                case 0x96:
+                    memory.Read(context.HL, out op);
+                    break;
+                case 0xD6:
+                    memory.Read((ushort)(context.PC + 1), out op);
+                    context.PC += 1;
+                    break;
+                default:
+                    throw new InvalidOperationException($"unsupported opcode {instruction.Opcode,0:X2}");
+            }
+            context.A -= op;
+            context.ZeroFlag = context.A == 0;
+            context.CarryFlag = op > old;
+            context.HalfCarryFlag = (op & 0xF) > (old & 0xF);
+            context.PC += 1;
+        }
+
+        public static void SBCA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            byte old = context.A;
+            byte op;
+            context.SubstractFlag = true;
+            switch (instruction.Opcode)
+            {
+                case 0x9F:
+                    op = context.A;
+                    break;
+                case 0x98:
+                    op = context.B;
+                    break;
+                case 0x99:
+                    op = context.C;
+                    break;
+                case 0x9A:
+                    op = context.D;
+                    break;
+                case 0x9B:
+                    op = context.E;
+                    break;
+                case 0x9C:
+                    op = context.H;
+                    break;
+                case 0x9D:
+                    op = context.L;
+                    break;
+                case 0x9E:
+                    memory.Read(context.HL, out op);
+                    break;
+                default:
+                    throw new InvalidOperationException($"unsupported opcode {instruction.Opcode,0:X2}");
+            }
+            op += (byte)(context.CarryFlag ? 1 : 0);
+            context.A -= op;
+            context.ZeroFlag = context.A == 0;
+            context.CarryFlag = op > old;
+            context.HalfCarryFlag = (op & 0xF) > (old & 0xF);
+            context.PC += 1;
         }
 
         private static bool IsHalfCarry(byte old, byte res)
