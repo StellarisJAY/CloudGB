@@ -359,6 +359,132 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             context.PC += 1;
         }
 
+        public static void AndA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch(instruction.Opcode)
+            {
+                case 0xA7:
+                    context.A &= context.A;
+                    break;
+                case 0xA0:
+                    context.A &= context.B;
+                    break;
+                case 0xA1:
+                    context.A &= context.C;
+                    break;
+                case 0xA2:
+                    context.A &= context.D;
+                    break;
+                case 0xA3:
+                    context.A &= context.E;
+                    break;
+                case 0xA4:
+                    context.A &= context.H;
+                    break;
+                case 0xA5:
+                    context.A &= context.L;
+                    break;
+                case 0xA6:
+                    memory.Read(context.HL, out byte op);
+                    context.A &= op;
+                    break;
+                case 0xE6:
+                    memory.Read((ushort)(context.PC + 1), out op);
+                    context.A &= op;
+                    context.PC += 1;
+                    break;
+            }
+            context.PC += 1;
+            context.ZeroFlag = context.A == 0;
+            context.SubstractFlag = false;
+            context.HalfCarryFlag = true;
+            context.CarryFlag = false;
+        }
+
+        public static void OrA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch (instruction.Opcode)
+            {
+                case 0xB7:
+                    context.A |= context.A;
+                    break;
+                case 0xB0:
+                    context.A |= context.B;
+                    break;
+                case 0xB1:
+                    context.A |= context.C;
+                    break;
+                case 0xB2:
+                    context.A |= context.D;
+                    break;
+                case 0xB3:
+                    context.A |= context.E;
+                    break;
+                case 0xB4:
+                    context.A |= context.H;
+                    break;
+                case 0xB5:
+                    context.A |= context.L;
+                    break;
+                case 0xB6:
+                    memory.Read(context.HL, out byte op);
+                    context.A |= op;
+                    break;
+                case 0xF6:
+                    memory.Read((ushort)(context.PC + 1), out op);
+                    context.A |= op;
+                    context.PC += 1;
+                    break;
+            }
+            context.PC += 1;
+            context.ZeroFlag = context.A == 0;
+            context.SubstractFlag = false;
+            context.HalfCarryFlag = false;
+            context.CarryFlag = false;
+        }
+
+        public static void XorA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch (instruction.Opcode)
+            {
+                case 0xAF:
+                    context.A ^= context.A;
+                    break;
+                case 0xA8:
+                    context.A ^= context.B;
+                    break;
+                case 0xA9:
+                    context.A ^= context.C;
+                    break;
+                case 0xAA:
+                    context.A ^= context.D;
+                    break;
+                case 0xAB:
+                    context.A ^= context.E;
+                    break;
+                case 0xAC:
+                    context.A ^= context.H;
+                    break;
+                case 0xAD:
+                    context.A ^= context.L;
+                    break;
+                case 0xAE:
+                    memory.Read(context.HL, out byte op);
+                    context.A ^= op;
+                    break;
+                case 0xEE:
+                    memory.Read((ushort)(context.PC + 1), out op);
+                    context.A ^= op;
+                    context.PC += 1;
+                    break;
+            }
+            context.PC += 1;
+            context.ZeroFlag = context.A == 0;
+            context.SubstractFlag = false;
+            context.HalfCarryFlag = false;
+            context.CarryFlag = false;
+        }
+
         private static bool IsHalfCarry(byte old, byte res)
         {
             return (old & 0xF) > (res & 0xF);

@@ -212,6 +212,41 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x9D] = new(0x9D, "SBC", "SBC A,L", 4, 0, SBCA);
             set[0x9E] = new(0x9E, "SBC", "SBC A,(HL)", 8, 0, SBCA);
             set[0x9F] = new(0x9F, "SBC", "SBC A,A", 4, 0, SBCA);
+
+
+            // AND A,n
+            set[0xA0] = new(0xA0, "AND", "AND A,B", 4, 0, AndA);
+            set[0xA1] = new(0xA1, "AND", "AND A,C", 4, 0, AndA);
+            set[0xA2] = new(0xA2, "AND", "AND A,D", 4, 0, AndA);
+            set[0xA3] = new(0xA3, "AND", "AND A,E", 4, 0, AndA);
+            set[0xA4] = new(0xA4, "AND", "AND A,H", 4, 0, AndA);
+            set[0xA5] = new(0xA5, "AND", "AND A,L", 4, 0, AndA);
+            set[0xA6] = new(0xA6, "AND", "AND A,(HL)", 8, 0, AndA);
+            set[0xA7] = new(0xA7, "AND", "AND A,A", 4, 0, AndA);
+            set[0xE6] = new(0xE6, "AND", "AND A,n", 8, 1, AndA);
+
+            // OR A,n
+            set[0xB0] = new(0xB0, "OR", "OR A,B", 4, 0, OrA);
+            set[0xB1] = new(0xB1, "OR", "OR A,C", 4, 0, OrA);
+            set[0xB2] = new(0xB2, "OR", "OR A,D", 4, 0, OrA);
+            set[0xB3] = new(0xB3, "OR", "OR A,E", 4, 0, OrA);
+            set[0xB4] = new(0xB4, "OR", "OR A,H", 4, 0, OrA);
+            set[0xB5] = new(0xB5, "OR", "OR A,L", 4, 0, OrA);
+            set[0xB6] = new(0xB6, "OR", "OR A,(HL)", 8, 0, OrA);
+            set[0xB7] = new(0xB7, "OR", "OR A,A", 4, 0, OrA);
+            set[0xF6] = new(0xF6, "OR", "OR A,n", 8, 1, OrA);
+
+            // XOR A,n
+            set[0xA8] = new(0xA8, "XOR", "XOR A,B", 4, 0, XorA);
+            set[0xA9] = new(0xA9, "XOR", "XOR A,C", 4, 0, XorA);
+            set[0xAA] = new(0xAA, "XOR", "XOR A,D", 4, 0, XorA);
+            set[0xAB] = new(0xAB, "XOR", "XOR A,E", 4, 0, XorA);
+            set[0xAC] = new(0xAC, "XOR", "XOR A,H", 4, 0, XorA);
+            set[0xAD] = new(0xAD, "XOR", "XOR A,L", 4, 0, XorA);
+            set[0xAE] = new(0xAE, "XOR", "XOR A,(HL)", 8, 0, XorA);
+            set[0xAF] = new(0xAF, "XOR", "XOR A,A", 4, 0, XorA);
+            set[0xEE] = new(0xEE, "XOR", "XOR A,n", 8, 1, XorA);
+
             // INC
             set[0x04] = new(0x04, "INC", "INC B", 4, 0, Inc);
             set[0x0C] = new(0x0C, "INC", "INC C", 4, 0, Inc);
@@ -221,6 +256,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x2C] = new(0x2C, "INC", "INC L", 4, 0, Inc);
             set[0x34] = new(0x34, "INC", "INC (HL)", 12, 0, Inc);
             set[0x3C] = new(0x3C, "INC", "INC A", 4, 0, Inc);
+
 
             // DEC
             set[0x05] = new(0x05, "DEC", "DEC B", 4, 0, Dec);
