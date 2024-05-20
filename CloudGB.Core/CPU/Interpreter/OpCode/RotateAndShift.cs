@@ -9,27 +9,20 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
         public static void RotatesAndShiftsCB(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
             memory.Read((ushort)(context.PC + 1), out byte code);
-            switch (code)
+            var subInstr = instruction.SubInstructions?[code];
+            if (subInstr == null)
             {
-                case <= 0x07:
-                    RLC(context, instruction, memory, code);
-                    break;
-                case <= 0x0F:
-                    break;
-                case <= 0x17:
-                    break;
-                case <= 0x1F:
-                    break;
-                case <= 0x27:
-                    break;
+                throw new InvalidOperationException($"unsupported sub opcode: {code}");
             }
+            subInstr.Handle(context, subInstr, memory);
+            context.PC += 2;
         }
 
-        public static void RLC(CPUContext context, Instruction instruction, IMemoryMap memory, byte code)
+        public static void RLC(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
             context.SubstractFlag = false;
             context.HalfCarryFlag = false;
-            switch(code)
+            switch(instruction.Opcode)
             {
                 case 0x07:
                     context.CarryFlag = (context.A & (1 << 7)) != 0;
@@ -74,7 +67,6 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     memory.Write(context.HL, data);
                     break;
             }
-            context.PC += 1;
         }
     }
 }

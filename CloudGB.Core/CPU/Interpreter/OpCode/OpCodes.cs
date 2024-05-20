@@ -12,11 +12,27 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x76] = new(0x76, "HALT", "HALT", 4, 0, HALT);
             // JP nn
             set[0xC3] = new(0xC3, "JP", "JP nn", 12, 2, JPImm16);
+            // JP cc, nn
+            set[0xC2] = new(0xC2, "JP", "JP NZ,nn", 12, 2, JPCondition);
+            set[0xCA] = new(0xCA, "JP", "JP Z,nn", 12, 2, JPCondition);
+            set[0xD2] = new(0xD2, "JP", "JP NC,nn", 12, 2, JPCondition);
+            set[0xDA] = new(0xDA, "JP", "JP C,nn", 12, 2, JPCondition);
             // JR cc,n
             set[0x20] = new(0x20, "JR", "JR NZ,n", 8, 1, JRCondition);
             set[0x28] = new(0x28, "JR", "JR Z,n", 8, 1, JRCondition);
             set[0x30] = new(0x30, "JR", "JR NC,n", 8, 1, JRCondition);
             set[0x38] = new(0x38, "JR", "JR C,n", 8, 1, JRCondition);
+            // JP (HL)
+            set[0xE9] = new(0xE9, "JP", "JP (HL)", 16, 0, (ctx, instr, mem) => {
+                mem.Read16Bit(ctx.HL, out ushort addr);
+                ctx.PC = addr;
+            });
+            // JR n
+            set[0x18] = new(0x18, "JR", "JR n", 16, 1, (ctx, instr, mem) => {
+                mem.Read((ushort)(ctx.PC + 1), out byte n);
+                sbyte signedOff = (sbyte)n;
+                ctx.PC = (byte)(ctx.PC + signedOff);
+            });
             // LD r, n
             set[0x06] = new(0x06, "LD", "LD B,n", 8, 1, LoadImm8);
             set[0x0E] = new(0x0E, "LD", "LD C,n", 8, 1, LoadImm8);
@@ -36,6 +52,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x1A] = new(0x1A, "LD", "LD A,(DE)", 8, 0, LoadA);
             set[0x7E] = new(0x7E, "LD", "LD A,(HL)", 8, 0, LoadA);
             set[0xFA] = new(0xFA, "LD", "LD A,(nn)", 16, 2, LoadA);
+            set[0x3E] = new(0x3E, "LD", "LD A,n", 8, 1, LoadA);
 
             // LD n, A
             set[0x47] = new(0x47, "LD", "LD B,A", 4, 0, StoreA);
@@ -176,6 +193,9 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x8F] = new(0x8F, "ADC", "ADC A,A", 4, 0, AdcA);
             set[0xCE] = new(0xCE, "ADC", "ADC A,n", 8, 0, AdcA);
 
+            // SUB A,n
+            // SBC A,n
+
             // INC
             set[0x04] = new(0x04, "INC", "INC B", 4, 0, Inc);
             set[0x0C] = new(0x0C, "INC", "INC C", 4, 0, Inc);
@@ -195,24 +215,101 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x2D] = new(0x2D, "DEC", "DEC L", 4, 0, Dec);
             set[0x35] = new(0x35, "DEC", "DEC (HL)", 12, 0, Dec);
             set[0x3D] = new(0x3D, "DEC", "DEC A", 4, 0, Dec);
+
+            // ADD HL,r16
+            set[0x09] = new(0x09, "ADD HL", "ADD HL,BC", 8, 0, AddHL);
+            set[0x19] = new(0x19, "ADD HL", "ADD HL,DE", 8, 0, AddHL);
+            set[0x29] = new(0x29, "ADD HL", "ADD HL,HL", 8, 0, AddHL);
+            set[0x39] = new(0x39, "ADD HL", "ADD HL,SP", 8, 0, AddHL);
+
+            // INC r16
+            set[0x03] = new(0x03, "INC", "INC BC", 8, 0, Inc16);
+            set[0x13] = new(0x13, "INC", "INC DE", 8, 0, Inc16);
+            set[0x23] = new(0x23, "INC", "INC HL", 8, 0, Inc16);
+            set[0x33] = new(0x33, "INC", "INC SP", 8, 0, Inc16);
+
+            // DEC r16
+            set[0x0B] = new(0x0B, "DEC", "DEC BC", 8, 0, Dec16);
+            set[0x1B] = new(0x1B, "DEC", "DEC DE", 8, 0, Dec16);
+            set[0x2B] = new(0x2B, "DEC", "DEC HL", 8, 0, Dec16);
+            set[0x3B] = new(0x3B, "DEC", "DEC SP", 8, 0, Dec16);
+
+            // 0xCB
+            Instruction cb = new(0xCB, null, null, 0, 1, RotatesAndShiftsCB)
+            {
+                SubInstructions = new Instruction[256]
+            };
+            // 0xCB SWAP
+            cb.SubInstructions[0x30] = new(0x30, "SWAP", "SWAP B", 8, 0, Swap);
+            cb.SubInstructions[0x31] = new(0x31, "SWAP", "SWAP C", 8, 0, Swap);
+            cb.SubInstructions[0x32] = new(0x32, "SWAP", "SWAP D", 8, 0, Swap);
+            cb.SubInstructions[0x33] = new(0x33, "SWAP", "SWAP E", 8, 0, Swap);
+            cb.SubInstructions[0x34] = new(0x34, "SWAP", "SWAP H", 8, 0, Swap);
+            cb.SubInstructions[0x35] = new(0x35, "SWAP", "SWAP L", 8, 0, Swap);
+            cb.SubInstructions[0x36] = new(0x36, "SWAP", "SWAP (HL)", 16, 0, Swap);
+            cb.SubInstructions[0x37] = new(0x37, "SWAP", "SWAP A", 8, 0, Swap);
+
+            // 0xCB RLC
+            cb.SubInstructions[0x0] = new(0x0, "RLC", "RLC B", 8, 0, RLC);
+            cb.SubInstructions[0x1] = new(0x1, "RLC", "RLC C", 8, 0, RLC);
+            cb.SubInstructions[0x2] = new(0x2, "RLC", "RLC D", 8, 0, RLC);
+            cb.SubInstructions[0x3] = new(0x3, "RLC", "RLC E", 8, 0, RLC);
+            cb.SubInstructions[0x4] = new(0x4, "RLC", "RLC H", 8, 0, RLC);
+            cb.SubInstructions[0x5] = new(0x5, "RLC", "RLC L", 8, 0, RLC);
+            cb.SubInstructions[0x6] = new(0x6, "RLC", "RLC (HL)", 16, 0, RLC);
+            cb.SubInstructions[0x7] = new(0x7, "RLC", "RLC A", 8, 0, RLC);
+            set[0xCB] = cb;
+
+            // CALL nn
+            set[0xCD] = new(0xCD, "CALL", "CALL nn", 12, 2, Call);
+            // CALL cc,nn
+            set[0xC4] = new(0xC4, "CALL", "CALL NZ,nn", 12, 2, CallCondition);
+            set[0xCC] = new(0xCC, "CALL", "CALL Z,nn", 12, 2, CallCondition);
+            set[0xD4] = new(0xD4, "CALL", "CALL NC,nn", 12, 2, CallCondition);
+            set[0xDC] = new(0xDC, "CALL", "CALL C,nn", 12, 2, CallCondition);
+            // RET
+            set[0xC9] = new(0xC9, "RET", "RET", 8, 0, Ret);
+            // RET cc
+            set[0xC0] = new(0xC0, "RET", "RET NZ", 8, 0, RetCondition);
+            set[0xC8] = new(0xC8, "RET", "RET Z", 8, 0, RetCondition);
+            set[0xD0] = new(0xD0, "RET", "RET NC", 8, 0, RetCondition);
+            set[0xD8] = new(0xD8, "RET", "RET C", 8, 0, RetCondition);
+            // RETI
+            set[0xD9] = new(0xD9, "RETI", "RETI", 8, 0, Reti);
+
+            // CPL
+            set[0x2F] = new(0x2F, "CPL", "CPL", 4, 0, CPL);
+
+            // CCF
+            set[0x3F] = new(0x3F, "CCF", "CCF", 4, 0, CCF);
+            // SCF
+            set[0x37] = new(0x37, "SCF", "SCF", 4, 0, (ctx, instr, mem) => {
+                ctx.CarryFlag = true;
+                ctx.SubstractFlag = false;
+                ctx.HalfCarryFlag = false;
+            });
         }
 
-        public static void BenchmarkOpCodes(long N)
+        public static void BenchmarkOpCodes()
         {
-            byte[] load = [0xFA, 0x0, 0x0, 0xC3, 0x6, 0x0, 0xFA, 0x0, 0x0, 0x76];
-            IMemoryMap memory = new DefaultMemoryMap(load, load);
+            var data = File.ReadAllBytes(@"D:\code\other\game-boy-test-roms\blargg\cpu_instrs\individual\06-ld r,r.gb");
+            IMemoryMap memory = new DefaultMemoryMap(data[0..0x4000], data[0x4000..0x8000]);
             IProcessor cpu = new InterpreterProcessor(memory, false);
-            long totalCycles = 0;
+            cpu.Reset();
             var start = DateTime.Now;
-            for (var i = 0; i < N; i++)
+            long totalCycles = 0;
+            while (cpu.Step(out int cycles))
             {
-                cpu.Step(out int cycles);
-                cpu.Reset();
                 totalCycles += cycles;
+                if (totalCycles >= 1000000000)
+                {
+                    break;
+                }
             }
             var end = DateTime.Now;
-            long time = end.Subtract(start).Milliseconds;
-            Console.WriteLine($"N={N}, time used={time}ms, speed={(totalCycles /1000) / time}MHz");
+            var timeUsed = end.Subtract(start).TotalMilliseconds;
+            Console.WriteLine($"time used:{timeUsed}ms, speed:{(totalCycles/1000)/timeUsed}MHz");
         }
     }
 }
+ 

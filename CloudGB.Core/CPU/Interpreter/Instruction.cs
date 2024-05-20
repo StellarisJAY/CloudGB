@@ -11,6 +11,8 @@ namespace CloudGB.Core.CPU.Interpreter
 
         public int Argc { get; set; }
 
+        public Instruction?[]? SubInstructions { get; set; } = null;
+
         public delegate void Handler(CPUContext context, Instruction instruction, IMemoryMap memory);
         
         public Handler Handle { get; set; }
