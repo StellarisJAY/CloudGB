@@ -84,6 +84,9 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     context.PC += 3;
                     break;
                 case 0x3E:
+                    memory.Read((ushort)(context.PC + 1), out data);
+                    context.A = data;
+                    context.PC += 2;
                     break;
             }
         }
