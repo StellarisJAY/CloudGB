@@ -208,6 +208,68 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             context.HalfCarryFlag = (old & 0xF) == 0;
         }
 
+        public static void AddHL(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            context.SubstractFlag = false;
+            ushort old = context.HL;
+            switch(instruction.Opcode)
+            {
+                case 0x09:
+                    context.HL += context.BC;
+                    break;
+                case 0x19:
+                    context.HL += context.DE;
+                    break;
+                case 0x29:
+                    context.HL += context.HL;
+                    break;
+                case 0x39:
+                    context.HL += context.SP;
+                    break;
+            }
+            context.CarryFlag = old > context.HL;
+            context.HalfCarryFlag = (old & 0x8FF) > (context.HL & 0x8FF);
+            context.PC += 1;
+        }
+
+        public static void Inc16(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch(instruction.Opcode)
+            {
+                case 0x03:
+                    context.BC += 1;
+                    break;
+                case 0x13:
+                    context.DE += 1;
+                    break;
+                case 0x23:
+                    context.HL += 1;
+                    break;
+                case 0x33:
+                    context.SP += 1;
+                    break;
+            }
+        }
+
+        public static void Dec16(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch (instruction.Opcode)
+            {
+                case 0x0B:
+                    context.BC -= 1;
+                    break;
+                case 0x1B:
+                    context.DE -= 1;
+                    break;
+                case 0x2B:
+                    context.HL -= 1;
+                    break;
+                case 0x3B:
+                    context.SP -= 1;
+                    break;
+            }
+        }
+
         private static bool IsHalfCarry(byte old, byte res)
         {
             return (old & 0xF) > (res & 0xF);
