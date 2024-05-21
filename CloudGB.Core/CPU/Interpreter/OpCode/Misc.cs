@@ -74,6 +74,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             context.CarryFlag = !context.CarryFlag;
             context.SubstractFlag = false;
             context.HalfCarryFlag = false;
+            context.PC += 1;
         }
     }
 }
