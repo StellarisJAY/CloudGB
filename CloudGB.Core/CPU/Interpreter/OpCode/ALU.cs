@@ -485,6 +485,49 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             context.CarryFlag = false;
         }
 
+        public static void CP(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            byte other;
+            switch (instruction.Opcode)
+            {
+                case 0xBF:
+                    other = context.A;
+                    break;
+                case 0xB8:
+                    other = context.B;
+                    break;
+                case 0xB9:
+                    other = context.C;
+                    break;
+                case 0xBA:
+                    other = context.D;
+                    break;
+                case 0xBB:
+                    other = context.E;
+                    break;
+                case 0xBC:
+                    other = context.H;
+                    break;
+                case 0xBD:
+                    other = context.L;
+                    break;
+                case 0xBE:
+                    memory.Read(context.HL, out other);
+                    break;
+                case 0xFE:
+                    memory.Read((ushort)(context.PC + 1), out other);
+                    context.PC += 1;
+                    break;
+                default:
+                    throw new InvalidOperationException($"unsupported opcode {instruction.Opcode}");
+            }
+            context.ZeroFlag = context.A == other;
+            context.SubstractFlag = true;
+            context.CarryFlag = context.A < other;
+            context.HalfCarryFlag = (other & 0xF) > (context.A & 0xF);
+            context.PC += 1;
+        }
+
         private static bool IsHalfCarry(byte old, byte res)
         {
             return (old & 0xF) > (res & 0xF);
