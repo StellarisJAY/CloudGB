@@ -388,5 +388,24 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             }
             context.PC += 3;
         }
+
+        // LDH n,A
+        public static void StoreAN(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            memory.Read((ushort)(context.PC + 1), out byte offset);
+            ushort addr = (ushort)(0xFF00 + offset);
+            memory.Write(addr, context.A);
+            context.PC += 2;
+        }
+
+        // LDH A,n
+        public static void LoadAN(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            memory.Read((ushort)(context.PC + 1), out byte offset);
+            ushort addr = (ushort)(0xFF00 + offset);
+            memory.Read(addr, out byte data);
+            context.A = data;
+            context.PC += 2;
+        }
     }
 }
