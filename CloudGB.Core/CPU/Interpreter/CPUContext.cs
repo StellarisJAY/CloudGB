@@ -14,6 +14,8 @@ namespace CloudGB.Core.CPU.Interpreter
         public long TotalCycles { get; set; }
         public int LastCycles { get; set; }
 
+        public bool InterruptEnable { get; set; }
+
         public byte A
         {
             get => (byte)(AF >> 8);

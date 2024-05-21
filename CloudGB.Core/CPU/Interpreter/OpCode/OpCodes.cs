@@ -31,7 +31,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x18] = new(0x18, "JR", "JR n", 16, 1, (ctx, instr, mem) => {
                 mem.Read((ushort)(ctx.PC + 1), out byte n);
                 sbyte signedOff = (sbyte)n;
-                ctx.PC = (byte)(ctx.PC + signedOff);
+                ctx.PC = (ushort)(ctx.PC + signedOff + 2);
             });
             // LD r, n
             set[0x06] = new(0x06, "LD", "LD B,n", 8, 1, LoadImm8);
@@ -150,11 +150,29 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                 ctx.HL += 1;
                 ctx.PC += 1;
             });
+            // LDI (HL+),A
+            set[0x22] = new(0x22, "LDI", "LDI (HL+),A", 8, 0, (ctx, instr, mem) =>
+            {
+                mem.Write(ctx.HL, ctx.A);
+                ctx.HL += 1;
+                ctx.PC += 1;
+            });
+            // LDD (HL-),A
+            set[0x32] = new(0x32, "LDD", "LDD (HL-),A", 8, 0, (ctx, instr, mem) =>
+            {
+                mem.Write(ctx.HL, ctx.A);
+                ctx.HL -= 1;
+                ctx.PC += 1;
+            });
+
+            set[0xE0] = new(0xE0, "LDH", "LDH n,A", 12, 1, StoreAN);
+            set[0xF0] = new(0xF0, "LDH", "LDH A,n", 12, 1, LoadAN);
 
             // Stack
             // LD SP,HL
             set[0xF9] = new(0xF9, "LD", "LD SP,HL", 8, 0, (ctx, ins, mem) => { ctx.SP = ctx.HL; ctx.PC += 1; });
-
+            // LD HL,SP,n
+            set[0xF8] = new(0xF8, "LD", "LD HL,SP,n", 12, 1, LoadHLSp);
             // LD (nn),SP
             set[0x08] = new(0x08, "LD", "LD (nn),SP", 20, 0, StoreSP);
 
@@ -268,6 +286,17 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x35] = new(0x35, "DEC", "DEC (HL)", 12, 0, Dec);
             set[0x3D] = new(0x3D, "DEC", "DEC A", 4, 0, Dec);
 
+
+            set[0xB8] = new(0xB8, "CP", "CP A,B", 4, 0, CP);
+            set[0xB9] = new(0xB9, "CP", "CP A,C", 4, 0, CP);
+            set[0xBA] = new(0xBA, "CP", "CP A,D", 4, 0, CP);
+            set[0xBB] = new(0xBB, "CP", "CP A,E", 4, 0, CP);
+            set[0xBC] = new(0xBC, "CP", "CP A,H", 4, 0, CP);
+            set[0xBD] = new(0xBD, "CP", "CP A,L", 4, 0, CP);
+            set[0xBE] = new(0xBE, "CP", "CP A,(HL)", 8, 0, CP);
+            set[0xBF] = new(0xBF, "CP", "CP A,A", 4, 0, CP);
+            set[0xFE] = new(0xFE, "CP", "CP A,n", 8, 1, CP);
+
             // ADD HL,r16
             set[0x09] = new(0x09, "ADD HL", "ADD HL,BC", 8, 0, AddHL);
             set[0x19] = new(0x19, "ADD HL", "ADD HL,DE", 8, 0, AddHL);
@@ -285,6 +314,12 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x1B] = new(0x1B, "DEC", "DEC DE", 8, 0, Dec16);
             set[0x2B] = new(0x2B, "DEC", "DEC HL", 8, 0, Dec16);
             set[0x3B] = new(0x3B, "DEC", "DEC SP", 8, 0, Dec16);
+
+            // RRCA
+            set[0x0F] = new(0x0F, "RRCA", "RRCA", 4, 0, RRCA);
+            // RRA
+            set[0x1F] = new(0x1F, "RRA", "RRA", 4, 0, RRA);
+
 
             // 0xCB
             Instruction cb = new(0xCB, null, null, 0, 1, RotatesAndShiftsCB)
@@ -310,6 +345,37 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             cb.SubInstructions[0x5] = new(0x5, "RLC", "RLC L", 8, 0, RLC);
             cb.SubInstructions[0x6] = new(0x6, "RLC", "RLC (HL)", 16, 0, RLC);
             cb.SubInstructions[0x7] = new(0x7, "RLC", "RLC A", 8, 0, RLC);
+
+            // 0xCB SRL
+            cb.SubInstructions[0x38] = new(0x38, "SRL", "SRL B", 8, 0, SRL);
+            cb.SubInstructions[0x39] = new(0x39, "SRL", "SRL C", 8, 0, SRL);
+            cb.SubInstructions[0x3A] = new(0x3A, "SRL", "SRL D", 8, 0, SRL);
+            cb.SubInstructions[0x3B] = new(0x3B, "SRL", "SRL E", 8, 0, SRL);
+            cb.SubInstructions[0x3C] = new(0x3C, "SRL", "SRL H", 8, 0, SRL);
+            cb.SubInstructions[0x3D] = new(0x3D, "SRL", "SRL L", 8, 0, SRL);
+            cb.SubInstructions[0x3E] = new(0x3E, "SRL", "SRL (HL)", 16, 0, SRL);
+            cb.SubInstructions[0x3F] = new(0x3F, "SRL", "SRL A", 8, 0, SRL);
+
+            // 0xCB RRC
+            cb.SubInstructions[0x08] = new(0x08, "RRC", "RRC B", 8, 0, RRC);
+            cb.SubInstructions[0x09] = new(0x09, "RRC", "RRC C", 8, 0, RRC);
+            cb.SubInstructions[0x0A] = new(0x0A, "RRC", "RRC D", 8, 0, RRC);
+            cb.SubInstructions[0x0B] = new(0x0B, "RRC", "RRC E", 8, 0, RRC);
+            cb.SubInstructions[0x0C] = new(0x0C, "RRC", "RRC H", 8, 0, RRC);
+            cb.SubInstructions[0x0D] = new(0x0D, "RRC", "RRC L", 8, 0, RRC);
+            cb.SubInstructions[0x0E] = new(0x0E, "RRC", "RRC (HL)", 16, 0, RRC);
+            cb.SubInstructions[0x0F] = new(0x0F, "RRC", "RRC A", 8, 0, RRC);
+
+            // 0xCB RR
+            cb.SubInstructions[0x18] = new(0x18, "RR", "RR B", 8, 0, RR);
+            cb.SubInstructions[0x19] = new(0x19, "RR", "RR C", 8, 0, RR);
+            cb.SubInstructions[0x1A] = new(0x1A, "RR", "RR D", 8, 0, RR);
+            cb.SubInstructions[0x1B] = new(0x1B, "RR", "RR E", 8, 0, RR);
+            cb.SubInstructions[0x1C] = new(0x1C, "RR", "RR H", 8, 0, RR);
+            cb.SubInstructions[0x1D] = new(0x1D, "RR", "RR L", 8, 0, RR);
+            cb.SubInstructions[0x1E] = new(0x1E, "RR", "RR (HL)", 16, 0, RR);
+            cb.SubInstructions[0x1F] = new(0x1F, "RR", "RR A", 8, 0, RR);
+
             set[0xCB] = cb;
 
             // CALL nn
@@ -340,6 +406,19 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                 ctx.SubstractFlag = false;
                 ctx.HalfCarryFlag = false;
             });
+
+            set[0xF3] = new(0xF3, "DI", "DI", 4, 0, (ctx, instr, mem) => { ctx.InterruptEnable = false; ctx.PC += 1; });
+            set[0xFB] = new(0xFB, "EI", "EI", 4, 0, (ctx, instr, mem) => { ctx.InterruptEnable = true; ctx.PC += 1; });
+
+            // Restart
+            set[0xC7] = new(0xC7, "RST", "RST 00", 32, 0, RST);
+            set[0xCF] = new(0xCF, "RST", "RST 08", 32, 0, RST);
+            set[0xD7] = new(0xD7, "RST", "RST 10", 32, 0, RST);
+            set[0xDF] = new(0xDF, "RST", "RST 18", 32, 0, RST);
+            set[0xE7] = new(0xE7, "RST", "RST 20", 32, 0, RST);
+            set[0xEF] = new(0xEF, "RST", "RST 28", 32, 0, RST);
+            set[0xF7] = new(0xF7, "RST", "RST 30", 32, 0, RST);
+            set[0xFF] = new(0xFF, "RST", "RST 38", 32, 0, RST);
         }
 
         public static void BenchmarkOpCodes()
