@@ -4,6 +4,19 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
 {
     public partial class OpCodes
     {
+        private static void PushStack16(CPUContext context, IMemoryMap memory, ushort data)
+        {
+            context.SP -= 2;
+            memory.Write16Bit(context.SP, data);
+        }
+
+        private static ushort PopStack16(CPUContext context, IMemoryMap memory)
+        {
+            memory.Read16Bit(context.SP, out ushort data);
+            context.SP += 2;
+            return data;
+        }
+
         // LD (nn),SP
         public static void StoreSP(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
@@ -18,25 +31,24 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             switch (instruction.Opcode) 
             {
                 case 0xF5:
-                    memory.Write16Bit((ushort)(context.SP - 1), context.AF);
+                    PushStack16(context, memory, context.AF);
                     break;
                 case 0xC5:
-                    memory.Write16Bit((ushort)(context.SP - 1), context.BC);
+                    PushStack16(context, memory, context.BC);
                     break;
                 case 0xD5:
-                    memory.Write16Bit((ushort)(context.SP - 1), context.DE);
+                    PushStack16(context, memory, context.DE);
                     break;
                 case 0xE5:
-                    memory.Write16Bit((ushort)(context.SP - 1), context.HL);
+                    PushStack16(context, memory, context.HL);
                     break;
             }
             context.PC += 1;
-            context.SP -= 2;
         }
 
         public static void Pop16(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
-            memory.Read16Bit((ushort)(context.SP + 1), out ushort data);
+            ushort data = PopStack16(context, memory);
             switch(instruction.Opcode)
             {
                 case 0xF1:
@@ -53,7 +65,16 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     break;
             }
             context.PC += 1;
-            context.SP += 2;
+        }
+
+        public static void LoadHLSp(CPUContext context, Instruction instr, IMemoryMap memory)
+        {
+            memory.Read((ushort)(context.PC + 1), out byte data);
+            sbyte signedOffset = (sbyte)data;
+            context.ZeroFlag = false;
+            context.SubstractFlag = false;
+            context.HL = (ushort)(context.SP + signedOffset);
+            context.PC += 2;
         }
     }
 }

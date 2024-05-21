@@ -17,19 +17,19 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             switch (instruction.Opcode)
             {
                 case 0x20:
-                    signedOff = (sbyte)(!context.ZeroFlag ? signedOff : 2);
+                    signedOff = (sbyte)(!context.ZeroFlag ? signedOff : 0);
                     break;
                 case 0x28:
-                    signedOff = (sbyte)(context.ZeroFlag ? signedOff : 2);
+                    signedOff = (sbyte)(context.ZeroFlag ? signedOff : 0);
                     break;
                 case 0x30:
-                    signedOff = (sbyte)(!context.CarryFlag ? signedOff : 2);
+                    signedOff = (sbyte)(!context.CarryFlag ? signedOff : 0);
                     break;
                 case 0x38:
-                    signedOff = (sbyte)(context.CarryFlag ? signedOff : 2);
+                    signedOff = (sbyte)(context.CarryFlag ? signedOff : 0);
                     break;
             }
-            context.PC = (ushort)(context.PC + signedOff);
+            context.PC = (ushort)(context.PC + signedOff + 2);
         }
 
         public static void JPCondition(CPUContext context, Instruction instruction, IMemoryMap memory)
@@ -57,8 +57,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
         public static void Call(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
             memory.Read16Bit((ushort)(context.PC + 1), out ushort target);
-            memory.Write16Bit((ushort)(context.SP - 1), (ushort)(context.PC + 3));
-            context.SP -= 2;
+            PushStack16(context, memory, (ushort)(context.PC + 3));
             context.PC = target;
         }
 
@@ -85,16 +84,14 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             }
             if (condition)
             {
-                memory.Write16Bit((ushort)(context.SP - 1), (ushort)(context.PC + 3));
-                context.SP -= 2;
+                PushStack16(context, memory, (ushort)(context.PC + 3));
             }
             context.PC = condition ? target : (ushort)(context.PC + 3);
         }
 
         public static void Ret(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
-            memory.Read16Bit((ushort)(context.SP + 1), out ushort retAddr);
-            context.SP += 2;
+            ushort retAddr = PopStack16(context, memory);
             context.PC = retAddr;
         }
 
@@ -118,8 +115,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             }
             if (condition)
             {
-                context.SP -= 2;
-                memory.Read16Bit((ushort)(context.SP + 1), out ushort retAddr);
+                ushort retAddr = PopStack16(context, memory);
                 context.PC = retAddr;
             }else
             {
@@ -129,8 +125,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
 
         public static void Reti(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
-            memory.Read16Bit((ushort)(context.SP + 1), out ushort retAddr);
-            context.SP += 2;
+            ushort retAddr = PopStack16(context, memory);
             context.PC = retAddr;
             // todo enable Interrupt
         }
