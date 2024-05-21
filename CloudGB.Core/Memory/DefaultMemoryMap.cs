@@ -29,6 +29,8 @@ namespace CloudGB.Core.Memory
         /// </summary>
         private byte[] HighRAM;
 
+        private byte DebugBuffer;
+
         public DefaultMemoryMap(byte[] rom0, byte[] rom1)
         {
             ROM0 = rom0;
@@ -116,6 +118,13 @@ namespace CloudGB.Core.Memory
                     break;
                 case <= 0xFEFF:
                     writable = false;
+                    break;
+                case 0xFF01:
+                    DebugBuffer = data;
+                    break;
+                case 0xFF02:
+                    if (data == 0x81)
+                        Console.Write((char)DebugBuffer);
                     break;
                 case <= 0xFF7F:
                     break;
