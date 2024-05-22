@@ -1,7 +1,5 @@
 using CloudGB.Core.Memory;
 using CloudGB.Core.CPU.Interpreter.OpCode;
-using System;
-using System.Net;
 
 namespace CloudGB.Core.CPU.Interpreter
 {
@@ -66,6 +64,10 @@ namespace CloudGB.Core.CPU.Interpreter
             _context.LastCycles = 0;
             _context.TotalCycles = 0;
             _context.SP = 0xE000;
+            _context.AF = 0;
+            _context.BC = 0;
+            _context.DE = 0;
+            _context.HL = 0;
         }
 
         public void Reset(CPUContext context)
