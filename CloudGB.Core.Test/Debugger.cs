@@ -25,7 +25,21 @@ namespace CloudGB.Core.Test
             _handlers["c"] = HandleContinue;
             _handlers["s"] = HandleStep;
             _handlers["x"] = Disassemble;
-            _handlers["r"] = (cpu, args) => Console.WriteLine(cpu.DumpRegisters());
+            _handlers["reg"] = (cpu, args) => Console.WriteLine(cpu.DumpRegisters());
+            _handlers["r"] = (cpu, args) =>
+            {
+                cpu.Reset();
+                Mode = ExecMode.Halt;
+            };
+            _handlers["help"] = (cpu, args) =>
+            {
+                Console.WriteLine("b $address: create breakpoint at address");
+                Console.WriteLine("c:          continue execution until reaching a breakpoint");
+                Console.WriteLine("s:          single step forward");
+                Console.WriteLine("x $address: disassemble instruction at address");
+                Console.WriteLine("reg:        dump registers' values");
+                Console.WriteLine("r:          restart program");
+            };
         }
 
         public void Step(IProcessor cpu)
@@ -56,9 +70,13 @@ namespace CloudGB.Core.Test
                     _lastCommand = parts;
                     string command = parts[0];
                     string[] args = parts[1..];
+                    if (command.Equals("quit")) break;
                     if (_handlers.ContainsKey(command))
                     {
                         _handlers[command](cpu, args);
+                    }else
+                    {
+                        Console.WriteLine($"unknown command {command}");
                     }
                 }
             }
