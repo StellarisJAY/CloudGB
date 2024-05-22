@@ -1,5 +1,7 @@
 using CloudGB.Core.Memory;
 using CloudGB.Core.CPU.Interpreter.OpCode;
+using System;
+using System.Net;
 
 namespace CloudGB.Core.CPU.Interpreter
 {
@@ -12,6 +14,8 @@ namespace CloudGB.Core.CPU.Interpreter
 
         public delegate void InstructionCallback(Instruction instruction, CPUContext context, IMemoryMap memory);
         private InstructionCallback _instructionCallback;
+
+        private List<ushort> _breakpoints = [];
 
         public InterpreterProcessor(IMemoryMap memory, bool debugMode)
         {
@@ -28,12 +32,14 @@ namespace CloudGB.Core.CPU.Interpreter
             }
         }
 
-        public bool Step(out int cycles)
+        public bool Step(out int cycles, out int breakpoint)
         {
             cycles = 0;
+            breakpoint = -1;
             if (_context.Halt)
                 return false;
             bool hasNext = _memory.Read(_context.PC, out byte opcode);
+            breakpoint = _breakpoints.IndexOf(_context.PC);
             if (!hasNext)
             {
                 return false;
@@ -67,12 +73,47 @@ namespace CloudGB.Core.CPU.Interpreter
             _context = context;
         }
 
+        public int SetBreakpoint(ushort address)
+        {
+            int idx = _breakpoints.FindIndex(addr => addr == address);
+            if (idx != -1) return idx;
+            _breakpoints.Add(address);
+            return _breakpoints.Count - 1;
+        }
+
+        public void RemoveBreakpoint(int idx)
+        {
+            _breakpoints.RemoveAt(idx);
+        }
+
         private void TraceExecution(Instruction instruction, CPUContext context, IMemoryMap memory)
         {
+            Console.WriteLine($"{FormatInstruction(instruction, context.PC)}\t{DumpContext()}");
+        }
+
+        private string DumpContext()
+        {
+            return $"A:{_context.A,0:X2},B:{_context.B,0:X2},C:{_context.C,0:X2},D:{_context.D,0:X2},E:{_context.E,0:X2},F:{_context.F,0:X2},H:{_context.H,0:X2},L:{_context.L,0:X2}  Cycles:{_context.TotalCycles}";
+        }
+
+        string IProcessor.Disassemble(ushort address)
+        {
+            _memory.Read(address, out byte opcode); 
+            Instruction? instruction = _instructionSet[opcode];
+            if (instruction == null)
+            {
+                return $"Unknown opcode {opcode}";
+            }
+            return FormatInstruction(instruction, address);
+        }
+
+        private string FormatInstruction(Instruction instruction, ushort pc)
+        {
             string? fullDesc = instruction.FullDescription;
+            if (string.IsNullOrEmpty(fullDesc)) fullDesc = instruction.Name;
             if (instruction.Opcode == 0xCB)
             {
-                memory.Read((ushort)(_context.PC + 1), out byte subCode);
+                _memory.Read((ushort)(pc + 1), out byte subCode);
                 var subInstr = instruction.SubInstructions?[subCode];
                 if (subInstr != null)
                 {
@@ -82,21 +123,26 @@ namespace CloudGB.Core.CPU.Interpreter
             string args = "     ";
             if (instruction.Argc == 1)
             {
-                memory.Read((ushort)(context.PC + 1), out byte arg);
+                _memory.Read((ushort)(pc + 1), out byte arg);
                 args = $"{arg,0:X2}   ";
             }
             else if (instruction.Argc == 2)
             {
-                memory.Read((ushort)(context.PC + 1), out byte low);
-                memory.Read((ushort)(context.PC + 2), out byte high);
+                _memory.Read((ushort)(pc + 1), out byte low);
+                _memory.Read((ushort)(pc + 2), out byte high);
                 args = $"{low,0:X2} {high,0:X2}";
             }
-            Console.WriteLine($"{context.PC,0:X4}\t{instruction.Opcode,0:X2}  {fullDesc,-15} {args}\t{DumpContext()}");
+            return $"{pc,0:X4}\t{instruction.Opcode,0:X2}  {fullDesc,-15} {args}";
         }
 
-        private string DumpContext()
+        string IProcessor.DumpRegisters()
         {
-            return $"A:{_context.A,0:X2},B:{_context.B,0:X2},C:{_context.C,0:X2},D:{_context.D,0:X2},E:{_context.E,0:X2},F:{_context.F,0:X2},H:{_context.H,0:X2},L:{_context.L,0:X2}  Cycles:{_context.TotalCycles}";
+            return DumpContext();
+        }
+
+        ushort IProcessor.PC()
+        {
+            return _context.PC;
         }
     }
 }
