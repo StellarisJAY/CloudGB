@@ -2,6 +2,7 @@
 using CloudGB.Core.CPU;
 using CloudGB.Core.Memory;
 using System.CommandLine;
+using CloudGB.Core.Test;
 
 var debugOption = new Option<bool>(name: "--debug", description: "start in debug mode");
 var fileOption = new Option<string>(name: "--file", description: "target game file");
@@ -22,35 +23,8 @@ command.SetHandler((debugMode, file, traceMode) =>
 
     if (debugMode)
     {
-        bool continuious = false;
-        while (cpu.Step(out int cycles, out int breakpoint))
-        {
-            if (breakpoint >= 0)
-            {
-                Console.WriteLine($"Breakpoint {breakpoint} reached");
-                continuious = false;
-            }
-            if (!continuious)
-            {
-                string? cmd = Console.ReadLine();
-                if (string.IsNullOrEmpty(cmd)) continue;
-                switch (cmd)
-                {
-                    case "b":
-                        cpu.SetBreakpoint(0xC000);
-                        break;
-                    case "c":
-                        continuious = true;
-                        break;
-                    case "r":
-                        cpu.RemoveBreakpoint(0);
-                        break;
-                    default:
-                        Console.WriteLine($"unknown command {cmd}");
-                        break;
-                }
-            }
-        }
+        Debugger debugger = new();
+        debugger.Step(cpu);
     }else
     {
         while (cpu.Step(out int cycles, out int breakpoint))
