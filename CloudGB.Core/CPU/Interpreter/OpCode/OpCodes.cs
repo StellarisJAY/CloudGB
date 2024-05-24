@@ -429,9 +429,9 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0xFF] = new(0xFF, "RST", "RST 38", 32, 0, RST);
         }
 
-        public static void BenchmarkOpCodes()
+        public static void BenchmarkOpCodes(string file)
         {
-            var data = File.ReadAllBytes(@"D:\code\other\game-boy-test-roms\blargg\cpu_instrs\individual\06-ld r,r.gb");
+            var data = File.ReadAllBytes(file);
             IMemoryMap memory = new DefaultMemoryMap(data[0..0x4000], data[0x4000..0x8000]);
             IProcessor cpu = new InterpreterProcessor(memory, false);
             cpu.Reset();
