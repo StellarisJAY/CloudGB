@@ -2,6 +2,8 @@ namespace CloudGB.Core.Memory
 {
     public interface IMemoryMap
     {
+        public delegate byte PPUReader(ushort address);
+
         /// <summary>
         ///     Read data from an address.
         /// </summary>
@@ -21,5 +23,7 @@ namespace CloudGB.Core.Memory
         public bool Read16Bit(ushort address, out ushort data);
 
         public bool Write16Bit(ushort address, ushort data);
+
+        public void SetPPUReader(PPUReader reader);
     }
 }

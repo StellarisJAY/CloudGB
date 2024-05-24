@@ -20,6 +20,11 @@ namespace CloudGB.Core.PPU
 
         private int _dots = 0;
         private int _scanline = 0;
+
+        public int LY
+        {
+            get => _scanline;
+        }
         
         public GraphicProcessor(IMemoryMap memory)
         {
@@ -29,33 +34,56 @@ namespace CloudGB.Core.PPU
             _memory = memory;
         }
 
+        public byte Read(ushort address)
+        {
+            return address switch
+            {
+                0xFF44 => (byte)LY,
+                _ => 0,
+            };
+        }
+
         public void Step(int cpuCycles)
         {
-            if (_scanline >= 144)
-            {
-                _lcdStatus.Mode = LCDStatus.PPUMode.VBlank;
-            }else
+            if (_scanline < 144)
             {
                 _dots += cpuCycles;
                 if (_dots <= 80)
                 {
                     _lcdStatus.Mode = LCDStatus.PPUMode.OAMScan;
-                }else if (_dots <= 80 + 172)
+                }
+                else if (_dots <= 80 + 172)
                 {
                     _lcdStatus.Mode = LCDStatus.PPUMode.Drawing;
-                }else if (_dots < 456)
+                }
+                else if (_dots < 456)
                 {
                     _lcdStatus.Mode = LCDStatus.PPUMode.HBlank;
-                }else
+                }
+                else
                 {
                     _scanline++;
                     _dots -= 456;
                 }
-            }
-            foreach(var consumer in FrameConsumers)
+            } 
+            else if (_scanline < 153)
             {
-                consumer(_frame, out uint timeUsed);
+                _lcdStatus.Mode = LCDStatus.PPUMode.VBlank;
+                _dots += cpuCycles;
+                if (_dots >= 456)
+                {
+                    _scanline++;
+                    _dots -= 456;
+                }
+            }else
+            {
+                _scanline = 0;
+                _dots = 0;
             }
+            //foreach(var consumer in FrameConsumers)
+            //{
+            //    consumer(_frame, out uint timeUsed);
+            //}
         }
 
         private void RenderBackground()

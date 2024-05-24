@@ -31,6 +31,8 @@ namespace CloudGB.Core.Memory
 
         private byte DebugBuffer;
 
+        private IMemoryMap.PPUReader _ppuReader = _ => 0;
+
         public DefaultMemoryMap(byte[] rom0, byte[] rom1)
         {
             ROM0 = rom0;
@@ -79,9 +81,13 @@ namespace CloudGB.Core.Memory
                 case <= 0xFEFF:
                     readable = false;
                     break;
+                case 0xFF44:
+                    data = _ppuReader(address);
+                    break;
                 case <= 0xFF7F:
                     break;
                 case <= 0xFFFE:
+                    data = HighRAM[address - 0xFF80];
                     break;
                 case 0xFFFF:
                     data = InterruptEnable;
@@ -129,6 +135,7 @@ namespace CloudGB.Core.Memory
                 case <= 0xFF7F:
                     break;
                 case <= 0xFFFE:
+                    HighRAM[address - 0xFF80] = data;
                     break;
                 case 0xFFFF:
                     InterruptEnable = data;
@@ -150,6 +157,11 @@ namespace CloudGB.Core.Memory
             byte low = (byte)(data & 0xFF);
             byte high = (byte)(data >> 8);
             return Write(address, low) && Write((ushort)(address + 1), high);
+        }
+
+        void IMemoryMap.SetPPUReader(IMemoryMap.PPUReader reader)
+        {
+            _ppuReader = reader;
         }
     }
 }
