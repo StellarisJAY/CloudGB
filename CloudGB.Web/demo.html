@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+</head>
+<body>
+    <video width="200" height="200" id="video"></video>
+    <button onclick="start()">Start</button>
+</body>
+
+</html>
+
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://127.0.0.1:5210/negotiation", {
+            skipNegotiation: true,//跳过三个协议协商
+            transport: signalR.HttpTransportType.WebSockets,//定义使用WebSocket协议通讯
+        })
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    async function start() {
+        try {
+            await connection.start();
+            console.log("SignalR Connected.");
+        } catch (err) {
+            console.log(err);
+            setTimeout(start, 5000);
+        }
+    };
+
+    let connID;
+    let pc;
+    const video = document.getElementById("video");
+    connection.on("SDPOffer", (id, message) => {
+        connID = id;
+        pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: "stun:stun.usfamily.net"}, // todo setup coturn server
+            ],
+            iceTransportPolicy: "all"
+        });
+        let sdpOffer = JSON.parse(message);
+
+        pc.setRemoteDescription(sdpOffer)
+            .then(_ => pc.createAnswer())
+            .then(sdp => pc.setLocalDescription(sdp))
+            .then(_ => {
+                console.log("remote sdp: ", pc.remoteDescription);
+                console.log("local sdl:  ", pc.localDescription);
+                connection.invoke("SDPAnswer", connID, JSON.stringify(pc.localDescription));
+                pc.addTransceiver("video");
+            })
+            .catch(err => {
+                console.log(err)
+            });
+        pc.onicecandidateerror = (ev) => console.log(ev);
+        pc.onicecandidate = (ev) => {
+            if (ev.candidate === null) return;
+            connection.invoke("ICECandidate", connID, JSON.stringify(ev.candidate));
+        };
+    });
+
+    connection.onclose(async () => {
+        await start();
+        await pc.close();
+    });
+</script>

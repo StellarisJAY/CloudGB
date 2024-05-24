@@ -1,0 +1,6 @@
+@CloudGB.Web_HostAddress = http://localhost:5210
+
+GET {{CloudGB.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

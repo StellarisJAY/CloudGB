@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决�
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudGB.Web", "CloudGB.Web\CloudGB.Web.csproj", "{F88555C1-52DB-40DF-BC84-297B9631A113}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,10 +28,10 @@ Global
 		{90C24BA7-65FE-48C4-94C3-C4983179C985}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{90C24BA7-65FE-48C4-94C3-C4983179C985}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90C24BA7-65FE-48C4-94C3-C4983179C985}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD08FF83-C856-40EE-AAEF-16EC9FDA7C15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD08FF83-C856-40EE-AAEF-16EC9FDA7C15}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD08FF83-C856-40EE-AAEF-16EC9FDA7C15}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DD08FF83-C856-40EE-AAEF-16EC9FDA7C15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F88555C1-52DB-40DF-BC84-297B9631A113}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F88555C1-52DB-40DF-BC84-297B9631A113}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F88555C1-52DB-40DF-BC84-297B9631A113}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F88555C1-52DB-40DF-BC84-297B9631A113}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
