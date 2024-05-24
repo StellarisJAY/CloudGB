@@ -164,6 +164,14 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                 ctx.HL -= 1;
                 ctx.PC += 1;
             });
+            // LDD A,(HL-)
+            set[0x3A] = new(0x3A, "LDD", "LDD A,(HL-)", 8, 0, (ctx, instr, mem) =>
+            {
+                mem.Read(ctx.HL, out byte data);
+                ctx.A = data;
+                ctx.HL -= 1;
+                ctx.PC += 1;
+            });
 
             set[0xE0] = new(0xE0, "LDH", "LDH n,A", 12, 1, StoreAN);
             set[0xF0] = new(0xF0, "LDH", "LDH A,n", 12, 1, LoadAN);
