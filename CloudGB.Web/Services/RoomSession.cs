@@ -1,25 +1,28 @@
-﻿using SIPSorcery.Net;
+﻿using CloudGB.Core;
+using CloudGB.Web.Models;
+using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
-namespace CloudGB.Web.WebRTC
+namespace CloudGB.Web.Services
 {
-    public class WebRTCService
+    public class RoomSession
     {
         private readonly Dictionary<string, GameConnection> _connections = [];
         private readonly HashSet<string> _activeConns = [];
         private readonly object _connMutex = new();
-        private readonly ILogger _logger;
 
-        public readonly List<VideoFormat> SupportedVideoFormats = [
+        public static readonly List<VideoFormat> SupportedVideoFormats = [
             new VideoFormat(VideoCodecsEnum.VP8, 96),
             ];
-        public readonly List<AudioFormat> SupportedAudioFormats = [
+        public static readonly List<AudioFormat> SupportedAudioFormats = [
             new AudioFormat(AudioCodecsEnum.OPUS, 97),
             ];
 
-        public WebRTCService(ILogger<WebRTCService> logger)
+        private IEmulator _emulator;
+
+        public RoomSession()
         {
-            _logger = logger;
+            _emulator = new InterpreterEmulator();
         }
 
         public Task<GameConnection> CreatePeerConnection()
@@ -27,8 +30,6 @@ namespace CloudGB.Web.WebRTC
             RTCPeerConnection pc = new();
             MediaStreamTrack videoTrack = new(SupportedVideoFormats);
             pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new(SupportedAudioFormats);
-            pc.addTrack(audioTrack);
 
             GameConnection conn = new(pc);
 
@@ -60,10 +61,9 @@ namespace CloudGB.Web.WebRTC
                         }
                         break;
                 }
-
             };
             pc.ondatachannel += conn.OnDataChannel;
-            lock(_connMutex)
+            lock (_connMutex)
             {
                 _connections.Add(conn.ID, conn);
             }

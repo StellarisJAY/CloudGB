@@ -38,11 +38,15 @@
         connID = id;
         pc = new RTCPeerConnection({
             iceServers: [
-                { urls: "stun:stun.usfamily.net"}, // todo setup coturn server
+                { urls: "stun:64.131.63.216"}, // todo setup coturn server
             ],
             iceTransportPolicy: "all"
         });
         let sdpOffer = JSON.parse(message);
+
+        pc.onconnectionstatechange = (ev) => {
+            console.log(ev);
+        };
 
         pc.setRemoteDescription(sdpOffer)
             .then(_ => pc.createAnswer())
@@ -52,15 +56,15 @@
                 console.log("local sdl:  ", pc.localDescription);
                 connection.invoke("SDPAnswer", connID, JSON.stringify(pc.localDescription));
                 pc.addTransceiver("video");
+                pc.onicecandidate = (ev) => {
+                    if (ev.candidate === null) return;
+                    console.log(ev.candidate);
+                    connection.invoke("ICECandidate", connID, JSON.stringify(ev.candidate));
+                };
             })
             .catch(err => {
                 console.log(err)
             });
-        pc.onicecandidateerror = (ev) => console.log(ev);
-        pc.onicecandidate = (ev) => {
-            if (ev.candidate === null) return;
-            connection.invoke("ICECandidate", connID, JSON.stringify(ev.candidate));
-        };
     });
 
     connection.onclose(async () => {

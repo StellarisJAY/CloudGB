@@ -1,6 +1,6 @@
 ﻿using SIPSorcery.Net;
 
-namespace CloudGB.Web.WebRTC
+namespace CloudGB.Web.Models
 {
     public class GameConnection
     {
@@ -10,7 +10,7 @@ namespace CloudGB.Web.WebRTC
         public GameConnection(RTCPeerConnection pc)
         {
             PC = pc;
-            ID = Guid.NewGuid().ToString(); 
+            ID = Guid.NewGuid().ToString();
         }
 
         public void OnDataChannel(RTCDataChannel channel)

@@ -1,4 +1,5 @@
-using CloudGB.Web.WebRTC;
+using CloudGB.Web.Hubs;
+using CloudGB.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,8 +8,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddCors();
 
-builder.Services.AddSingleton<WebRTCService>();
-
+builder.Services.AddSingleton<RoomService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -17,5 +17,5 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseWebSockets();
-app.MapHub<NegotiationHub>("/negotiation");
+app.MapHub<NegotiationHub>("/hub/negotiation");
 app.Run();

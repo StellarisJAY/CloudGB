@@ -15,7 +15,11 @@
 
   <ItemGroup>
     <Folder Include="Emulator\" />
-    <Folder Include="WebRTC\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CloudGB.Core\CloudGB.Core.csproj" />
   </ItemGroup>
 
 </Project>
