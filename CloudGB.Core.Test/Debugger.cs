@@ -48,11 +48,15 @@ namespace CloudGB.Core.Test
             {
                 if (Mode == ExecMode.Continue)
                 {
-                    cpu.Step(out int cycles, out int breakpoint);
+                    bool hasNext = cpu.Step(out int cycles, out int breakpoint);
                     if (breakpoint >= 0)
                     {
                         Mode = ExecMode.Halt;
                         Console.WriteLine($"Breakpoint {breakpoint} reached");
+                    }
+                    if (!hasNext)
+                    {
+                        Mode = ExecMode.Halt;
                     }
                 }
                 if (Mode == ExecMode.Halt || Mode == ExecMode.SingleStep)
