@@ -156,6 +156,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                     memory.Write(addr, context.A);
                     break;
             }
+            context.PC += 1;
         }
 
         public static void LoadB(CPUContext context, Instruction instruction, IMemoryMap memory)
