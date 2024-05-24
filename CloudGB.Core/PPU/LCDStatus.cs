@@ -14,7 +14,8 @@
         {
             get
             {
-                return (GetFlag(0) | GetFlag(1)) switch
+                int flag = (GetFlag(0) ? 1 : 0) | (GetFlag(1) ? 2 : 0);
+                return flag switch
                 {
                     0 => PPUMode.HBlank,
                     1 => PPUMode.VBlank,
