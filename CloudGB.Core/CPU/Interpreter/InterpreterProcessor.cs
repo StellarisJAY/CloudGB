@@ -68,6 +68,7 @@ namespace CloudGB.Core.CPU.Interpreter
             _context.BC = 0;
             _context.DE = 0;
             _context.HL = 0;
+            _context.Halt = false;
         }
 
         public void Reset(CPUContext context)
