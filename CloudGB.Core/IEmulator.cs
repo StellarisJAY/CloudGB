@@ -1,3 +1,4 @@
+using CloudGB.Core.PPU;
 namespace CloudGB.Core
 {
     public interface IEmulator
@@ -6,5 +7,7 @@ namespace CloudGB.Core
         void Pause();
         void Resume();
         void Stop();
+
+        void AddFrameConsumer(GraphicProcessor.FrameConsumer consumer);
     }
 }
