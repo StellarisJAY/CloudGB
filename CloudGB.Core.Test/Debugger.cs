@@ -11,7 +11,7 @@ namespace CloudGB.Core.Test
             Continue,
         }
 
-        public delegate void CommandHandler(IProcessor cpu, string[] args);
+        public delegate void CommandHandler(IEmulator emulator, string[] args);
 
         private Dictionary<string, CommandHandler> _handlers = [];
 
@@ -25,13 +25,13 @@ namespace CloudGB.Core.Test
             _handlers["c"] = HandleContinue;
             _handlers["s"] = HandleStep;
             _handlers["x"] = Disassemble;
-            _handlers["reg"] = (cpu, args) => Console.WriteLine(cpu.DumpRegisters());
-            _handlers["r"] = (cpu, args) =>
+            _handlers["reg"] = (emulator, args) => Console.WriteLine(emulator.CPU().DumpRegisters());
+            _handlers["r"] = (emulator, args) =>
             {
-                cpu.Reset();
+                emulator.CPU().Reset();
                 Mode = ExecMode.Halt;
             };
-            _handlers["help"] = (cpu, args) =>
+            _handlers["help"] = (emulator, args) =>
             {
                 Console.WriteLine("b $address: create breakpoint at address");
                 Console.WriteLine("c:          continue execution until reaching a breakpoint");
@@ -42,13 +42,13 @@ namespace CloudGB.Core.Test
             };
         }
 
-        public void Step(IProcessor cpu)
+        public void Step(IEmulator emulator)
         {
             while(true)
             {
                 if (Mode == ExecMode.Continue)
                 {
-                    bool hasNext = cpu.Step(out int cycles, out int breakpoint);
+                    bool hasNext = emulator.DebugStep(out int breakpoint);
                     if (breakpoint >= 0)
                     {
                         Mode = ExecMode.Halt;
@@ -77,7 +77,7 @@ namespace CloudGB.Core.Test
                     if (command.Equals("quit")) break;
                     if (_handlers.ContainsKey(command))
                     {
-                        _handlers[command](cpu, args);
+                        _handlers[command](emulator, args);
                     }else
                     {
                         Console.WriteLine($"unknown command {command}");
@@ -89,12 +89,12 @@ namespace CloudGB.Core.Test
         ///     Create a breakpoint at given address.
         ///     Output the id of new breakpoint
         /// </summary>
-        private void HandleSetBreakpoint(IProcessor cpu, string[] args)
+        private void HandleSetBreakpoint(IEmulator emulator, string[] args)
         {
             if (args.Length > 0)
             {
                 ushort address = Convert.ToUInt16(args[0], 16);
-                int idx = cpu.SetBreakpoint(address);
+                int idx = emulator.CPU().SetBreakpoint(address);
                 Console.WriteLine($"breakponit {idx} set");
             }else
             {
@@ -102,15 +102,15 @@ namespace CloudGB.Core.Test
             }
         }
 
-        private void HandleContinue(IProcessor cpu, string[] args)
+        private void HandleContinue(IEmulator emulator, string[] args)
         {
             Mode = ExecMode.Continue;
         }
 
-        private void HandleStep(IProcessor cpu, string[] args)
+        private void HandleStep(IEmulator emulator, string[] args)
         {
             Mode = ExecMode.SingleStep;
-            if (!cpu.Step(out int cycles, out int breakpoint))
+            if (!emulator.DebugStep(out int breakpoint))
             {
                 Mode = ExecMode.Halt;
             }
@@ -124,12 +124,12 @@ namespace CloudGB.Core.Test
         ///     Disassemble an instruction at given address
         ///     If no address arg was provided, disassemble next instruction at PC
         /// </summary>
-        private void Disassemble(IProcessor cpu, string[] args)
+        private void Disassemble(IEmulator emulator, string[] args)
         {
             Mode = ExecMode.Halt;
             if (args.Length == 0)
             {
-                Console.WriteLine(cpu.Disassemble(cpu.PC()));
+                Console.WriteLine(emulator.CPU().Disassemble(emulator.CPU().PC()));
             }
         }
     }

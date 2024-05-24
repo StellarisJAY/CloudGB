@@ -3,6 +3,7 @@ using CloudGB.Core.CPU;
 using CloudGB.Core.Memory;
 using System.CommandLine;
 using CloudGB.Core.Test;
+using CloudGB.Core;
 
 var debugOption = new Option<bool>(name: "--debug", description: "start in debug mode");
 var fileOption = new Option<string>(name: "--file", description: "target game file");
@@ -16,21 +17,17 @@ command.AddOption(traceOption);
 command.SetHandler((debugMode, file, traceMode) =>
 {
     byte[] data = File.ReadAllBytes(file);
-    IMemoryMap memory = new DefaultMemoryMap(data[0..0x4000], data[0x4000..0x8000]);
-
-    IProcessor cpu = new InterpreterProcessor(memory, traceMode | debugMode);
-    cpu.Reset();
-
+    IEmulator emulator = new InterpreterEmulator(data, debugMode);
+    emulator.Reset();
     if (debugMode)
     {
         Debugger debugger = new();
-        debugger.Step(cpu);
+        debugger.Step(emulator);
     }else
     {
-        while (cpu.Step(out int cycles, out int breakpoint))
-        {}
+        emulator.Start();
     }
 }, debugOption, fileOption, traceOption);
 
-await command.InvokeAsync(args);
+command.Invoke(args);
 

@@ -1,3 +1,4 @@
+using CloudGB.Core.CPU;
 using CloudGB.Core.PPU;
 namespace CloudGB.Core
 {
@@ -9,5 +10,11 @@ namespace CloudGB.Core
         void Stop();
 
         void AddFrameConsumer(GraphicProcessor.FrameConsumer consumer);
+
+        bool DebugStep(out int breakpoint);
+
+        IProcessor CPU();
+
+        void Reset();
     }
 }

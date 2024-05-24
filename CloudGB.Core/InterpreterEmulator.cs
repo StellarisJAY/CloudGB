@@ -2,6 +2,7 @@
 using CloudGB.Core.CPU.Interpreter;
 using CloudGB.Core.Memory;
 using CloudGB.Core.PPU;
+using System.Diagnostics;
 
 namespace CloudGB.Core
 {
@@ -20,16 +21,23 @@ namespace CloudGB.Core
         static readonly long StatusRunning = 1;
         static readonly long StatusPaused = 2;
         static readonly long StatusStopped = 3;
+        static readonly long StatusDebug = 4;
 
-        public InterpreterEmulator()
+
+        public InterpreterEmulator(byte[] rom, bool debug)
         {
-            _memory = new DefaultMemoryMap();
-            _cpu = new InterpreterProcessor(_memory, false);
+            _memory = new DefaultMemoryMap(rom[0..0x4000], rom[0x4000..0x8000]);
+            _cpu = new InterpreterProcessor(_memory, debug);
             _ppu = new GraphicProcessor(_memory);
+            _memory.SetPPUReader(_ppu.Read);
             _bgWorker = new Thread(_ =>
             {
                 EmulatorLoop();
             });
+            if(debug)
+            {
+                _status = StatusDebug;
+            }
         }
 
         private void EmulatorLoop()
@@ -122,6 +130,26 @@ namespace CloudGB.Core
             {
                 Monitor.Pulse(_mutex);
             }
+        }
+
+        bool IEmulator.DebugStep(out int breakpoint)
+        {
+            bool hasNext = _cpu.Step(out int cycles, out breakpoint);
+            if (hasNext)
+            {
+                _ppu.Step(cycles * 4);
+            }
+            return hasNext;
+        }
+
+        IProcessor IEmulator.CPU()
+        {
+            return _cpu;
+        }
+
+        public void Reset()
+        {
+            _cpu.Reset();
         }
     }
 }
