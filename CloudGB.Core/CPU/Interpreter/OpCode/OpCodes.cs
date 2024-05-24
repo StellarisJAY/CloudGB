@@ -429,7 +429,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             cpu.Reset();
             var start = DateTime.Now;
             long totalCycles = 0;
-            while (cpu.Step(out int cycles))
+            while (cpu.Step(out int cycles, out int breakpoint))
             {
                 totalCycles += cycles;
                 if (totalCycles >= 1000000000)
