@@ -24,6 +24,21 @@
                     _ => throw new NotImplementedException("mode value not possible"),
                 };
             }
+            set
+            {
+                int flag = value switch
+                {
+                    PPUMode.HBlank => 0,
+                    PPUMode.VBlank => 1,
+                    PPUMode.OAMScan => 2,
+                    PPUMode.Drawing => 3,
+                    _ => throw new NotImplementedException("mode value not possible")
+                };
+                bool low = (flag & 1) == 1;
+                bool high = (flag & 2) != 0;
+                SetFlag(0, low);
+                SetFlag(1, high);
+            }
         }
 
         // todo implement LY == LYC
