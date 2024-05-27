@@ -6,27 +6,113 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
     public partial class OpCodes
     {
 
-        public static void RRA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        private static byte RotateRightThrouhCarry(CPUContext context, byte input)
         {
-            bool rightMost = (context.A & 1) == 1;
-            context.A >>= 1;
-            context.A |= (byte)(context.CarryFlag ? (1 << 7) : 0);
+            //byte old = input;
+            byte output = input;
+            bool rightMost = (output & 1) == 1;
+            output >>= 1;
+            output |= (byte)(context.CarryFlag ? (1 << 7) : 0);
             context.CarryFlag = rightMost;
-            context.ZeroFlag = context.A == 0;
-            context.PC += 1;
+            context.ZeroFlag = output == 0;
             context.HalfCarryFlag = false;
             context.SubstractFlag = false;
+            return output;
+        }
+
+        private static byte RotateRight(CPUContext context, byte input)
+        {
+            //byte old = input;
+            byte output = input;
+            bool rightMost = (output & 1) == 1;
+            output >>= 1;
+            output |= (byte)(rightMost ? (1<<7):0);
+            context.CarryFlag = rightMost;
+            context.ZeroFlag = output == 0;
+            context.HalfCarryFlag = false;
+            context.SubstractFlag = false;
+            return output;
+        }
+
+        private static byte RotateLeftThroughCarry(CPUContext context, byte input)
+        {
+            //byte old = input;
+            byte output = input;
+            bool leftMost = (output & (1 << 7)) != 0;
+            output <<= 1;
+            output |= (byte)(context.CarryFlag ? 1 : 0);
+            context.CarryFlag = leftMost;
+            context.ZeroFlag = output == 0;
+            context.HalfCarryFlag = false;
+            context.SubstractFlag = false;
+            return output;
+        }
+        private static byte RotateLeft(CPUContext context, byte input)
+        {
+            //byte old = input;
+            byte output = input;
+            bool leftMost = (output & (1 << 7)) != 0;
+            output <<= 1;
+            output |= (byte)(leftMost ? 1 : 0);
+            context.CarryFlag = leftMost;
+            context.ZeroFlag = output == 0;
+            context.HalfCarryFlag = false;
+            context.SubstractFlag = false;
+            return output;
+        }
+
+        private static byte ShiftLeft(CPUContext context, byte input, bool lsbZero)
+        {
+            byte leftMost = (byte)(input & (1<<7));
+            byte rightMost = (byte)(input & 1);
+            input <<= 1;
+            input |= (byte)(lsbZero ? 0 : rightMost);
+            context.CarryFlag = leftMost != 0;
+            context.ZeroFlag = input == 0;
+            context.HalfCarryFlag = false;
+            context.SubstractFlag = false;
+            return input;
+        }
+
+        private static byte ShiftRight(CPUContext context, byte input, bool msbZero)
+        {
+            byte leftMost = (byte)(input & (1 << 7));
+            byte rightMost = (byte)(input & 1);
+            input >>= 1;
+            input |= (byte)(msbZero ? 0 : leftMost);
+            context.CarryFlag = rightMost != 0;
+            context.ZeroFlag = input == 0;
+            context.HalfCarryFlag = false;
+            context.SubstractFlag = false;
+            return input;
+        }
+
+        public static void RLA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            context.A = RotateLeftThroughCarry(context, context.A);
+            context.PC += 1;
+            context.ZeroFlag = false;
+        }
+
+        public static void RLCA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            context.A = RotateLeft(context, context.A);
+            context.PC += 1;
+            context.ZeroFlag = false;
+        }
+
+        public static void RRA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            context.A = RotateRightThrouhCarry(context, context.A);
+            context.PC += 1;
+            context.ZeroFlag = false;
         }
 
         public static void RRCA(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
-            context.CarryFlag = (context.A & 1) == 1;
-            context.A >>= 1;
-            context.A |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-            context.ZeroFlag = context.A == 0;
+            context.A = RotateRight(context, context.A);
             context.PC += 1;
-            context.HalfCarryFlag = false;
-            context.SubstractFlag = false;
+            context.ZeroFlag = false;
         }
 
         public static void RotatesAndShiftsCB(CPUContext context, Instruction instruction, IMemoryMap memory)
@@ -34,8 +120,8 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             memory.Read((ushort)(context.PC + 1), out byte code);
             var subInstr = instruction.SubInstructions?[code];
             if (subInstr == null)
-            {
-                throw new InvalidOperationException($"unsupported sub opcode: {code}");
+            { 
+                throw new InvalidOperationException($"unsupported sub opcode: {code,0:X2}");
             }
             subInstr.Handle(context, subInstr, memory);
             context.PC += 2;
@@ -47,59 +133,32 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             switch (instruction.Opcode)
             {
                 case 0x0F:
-                    context.CarryFlag = (context.A & 1) == 1;
-                    context.A >>= 1;
-                    context.A |= (byte)(context.CarryFlag ? 1<<7 : 0);
-                    context.ZeroFlag = context.A == 0;
+                    context.A = RotateRight(context, context.A);
                     break;
                 case 0x08:
-                    context.CarryFlag = (context.B & 1) == 1;
-                    context.B >>= 1;
-                    context.B |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = context.B == 0;
+                    context.B = RotateRight(context, context.B);
                     break;
                 case 0x09:
-                    context.CarryFlag = (context.C & 1) == 1;
-                    context.C >>= 1;
-                    context.C |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = context.C == 0;
+                    context.C = RotateRight(context, context.C);
                     break;
                 case 0x0A:
-                    context.CarryFlag = (context.D & 1) == 1;
-                    context.D >>= 1;
-                    context.D |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = context.D == 0;
+                    context.D = RotateRight(context, context.D);
                     break;
                 case 0x0B:
-                    context.CarryFlag = (context.E & 1) == 1;
-                    context.E >>= 1;
-                    context.E |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = context.E == 0;
+                    context.E = RotateRight(context, context.E);
                     break;
                 case 0x0C:
-                    context.CarryFlag = (context.H & 1) == 1;
-                    context.H >>= 1;
-                    context.H |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = context.H == 0;
+                    context.H = RotateRight(context, context.H);
                     break;
                 case 0x0D:
-                    context.CarryFlag = (context.L & 1) == 1;
-                    context.L >>= 1;
-                    context.L |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = context.L == 0;
+                    context.L = RotateRight(context, context.L);
                     break;
                 case 0x0E:
                     memory.Read(context.HL, out byte data);
-                    context.CarryFlag = (data & 1) == 1;
-                    data >>= 1;
-                    data |= (byte)(context.CarryFlag ? 1 << 7 : 0);
-                    context.ZeroFlag = data == 0;
+                    data = RotateRight(context, data);
                     memory.Write(context.HL, data);
                     break;
             }
-            context.HalfCarryFlag = false;
-            context.SubstractFlag = false;
-            context.PC += 1;
         }
 
         // Rotate Right through Carry
@@ -109,67 +168,34 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             switch(instruction.Opcode)
             {
                 case 0x1F:
-                    bool rightMost = (context.A & 1) == 1;
-                    context.A >>= 1;
-                    context.A |= (byte)(context.CarryFlag ?  (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.A == 0;
+                    context.A = RotateRightThrouhCarry(context, context.A);
                     break;
                 case 0x18:
-                    rightMost = (context.B & 1) == 1;
-                    context.B >>= 1;
-                    context.B |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.B == 0;
+                    context.B = RotateRightThrouhCarry(context, context.B);
                     break;
                 case 0x19:
-                    rightMost = (context.C & 1) == 1;
-                    context.C >>= 1;
-                    context.C |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.C == 0;
+                    context.C = RotateRightThrouhCarry(context, context.C);
                     break;
                 case 0x1A:
-                    rightMost = (context.D & 1) == 1;
-                    context.D >>= 1;
-                    context.D |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.D == 0;
+                    context.D = RotateRightThrouhCarry(context, context.D);
                     break;
                 case 0x1B:
-                    rightMost = (context.E & 1) == 1;
-                    context.E >>= 1;
-                    context.E |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.E == 0;
+                    context.E = RotateRightThrouhCarry(context, context.E);
                     break;
                 case 0x1C:
-                    rightMost = (context.H & 1) == 1;
-                    context.H >>= 1;
-                    context.H |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.H == 0;
+                    context.H = RotateRightThrouhCarry(context, context.H);
                     break;
                 case 0x1D:
-                    rightMost = (context.L & 1) == 1;
-                    context.L >>= 1;
-                    context.L |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = context.L == 0;
+                    context.L = RotateRightThrouhCarry(context, context.L);
                     break;
                 case 0x1E:
                     memory.Read(context.HL, out byte data);
-                    rightMost = (data & 1) == 1;
-                    data >>= 1;
-                    data |= (byte)(context.CarryFlag ? (1 << 7) : 0);
-                    context.CarryFlag = rightMost;
-                    context.ZeroFlag = data == 0;
+                    data = RotateRightThrouhCarry(context, data);
                     memory.Write(context.HL, data);
                     break;
             }
             context.SubstractFlag = false;
             context.HalfCarryFlag = false;
-            context.PC += 1;
         }
 
         // SRL n
@@ -179,51 +205,102 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             switch (instruction.Opcode)
             {
                 case 0x3F:
-                    context.CarryFlag = (context.A & 1) == 1;
-                    context.A >>= 1;
-                    context.ZeroFlag = context.A == 0;
+                    context.A = ShiftRight(context, context.A, true);
                     break;
                 case 0x38:
-                    context.CarryFlag = (context.B & 1) == 1;
-                    context.B >>= 1;
-                    context.ZeroFlag = context.B == 0;
+                    context.B = ShiftRight(context, context.B, true);
                     break;
                 case 0x39:
-                    context.CarryFlag = (context.C & 1) == 1;
-                    context.C >>= 1;
-                    context.ZeroFlag = context.C== 0;
+                    context.C = ShiftRight(context, context.C, true);
                     break;
                 case 0x3A:
-                    context.CarryFlag = (context.D & 1) == 1;
-                    context.D >>= 1;
-                    context.ZeroFlag = context.D == 0;
+                    context.D = ShiftRight(context, context.D, true);
                     break;
                 case 0x3B:
-                    context.CarryFlag = (context.E & 1) == 1;
-                    context.E >>= 1;
-                    context.ZeroFlag = context.E == 0;
+                    context.E = ShiftRight(context, context.E, true);
                     break;
                 case 0x3C:
-                    context.CarryFlag = (context.H & 1) == 1;
-                    context.H >>= 1;
-                    context.ZeroFlag = context.H == 0;
+                    context.H = ShiftRight(context, context.H, true);
                     break;
                 case 0x3D:
-                    context.CarryFlag = (context.L & 1) == 1;
-                    context.L >>= 1;
-                    context.ZeroFlag = context.L == 0;
+                    context.L = ShiftRight(context, context.L, true);
                     break;
                 case 0x3E:
                     memory.Read(context.HL, out byte data);
-                    context.CarryFlag = (data & 1) == 1;
-                    data >>= 1;
-                    context.ZeroFlag = data == 0;
+                    data = ShiftRight(context, data, true);
                     memory.Write(context.HL, data);
                     break;
             }
-            context.HalfCarryFlag = false;
-            context.SubstractFlag = false;
-            context.PC += 1;
+        }
+
+        // SRA
+        // shift right into carry, MSB doesn't change
+        public static void SRA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch (instruction.Opcode)
+            {
+                case 0x2F:
+                    context.A = ShiftRight(context, context.A, false);
+                    break;
+                case 0x28:
+                    context.B = ShiftRight(context, context.B, false);
+                    break;
+                case 0x29:
+                    context.C = ShiftRight(context, context.C, false);
+                    break;
+                case 0x2A:
+                    context.D = ShiftRight(context, context.D, false);
+                    break;
+                case 0x2B:
+                    context.E = ShiftRight(context, context.E, false);
+                    break;
+                case 0x2C:
+                    context.H = ShiftRight(context, context.H, false);
+                    break;
+                case 0x2D:
+                    context.L = ShiftRight(context, context.L, false);
+                    break;
+                case 0x2E:
+                    memory.Read(context.HL, out byte data);
+                    data = ShiftRight(context, data, false);
+                    memory.Write(context.HL, data);
+                    break;
+            }
+        }
+        
+        // SLA
+        // shift left into carry, LSB set to 0
+        public static void SLA(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            switch (instruction.Opcode)
+            {
+                case 0x27:
+                    context.A = ShiftLeft(context, context.A, true);
+                    break;
+                case 0x20:
+                    context.B = ShiftLeft(context, context.B, true);
+                    break;
+                case 0x21:
+                    context.C = ShiftLeft(context, context.C, true);
+                    break;
+                case 0x22:
+                    context.D = ShiftLeft(context, context.D, true);
+                    break;
+                case 0x23:
+                    context.E = ShiftLeft(context, context.E, true);
+                    break;
+                case 0x24:
+                    context.H = ShiftLeft(context, context.H, true);
+                    break;
+                case 0x25:
+                    context.L = ShiftLeft(context, context.L, true);
+                    break;
+                case 0x26:
+                    memory.Read(context.HL, out byte data);
+                    data = ShiftLeft(context, data, true);
+                    memory.Write(context.HL, data);
+                    break;
+            }
         }
 
         public static void RLC(CPUContext context, Instruction instruction, IMemoryMap memory)
@@ -233,45 +310,64 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             switch(instruction.Opcode)
             {
                 case 0x07:
-                    context.CarryFlag = (context.A & (1 << 7)) != 0;
-                    context.A <<= 1;
-                    context.A |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.A = RotateLeft(context, context.A);
                     break;
                 case 0x00:
-                    context.CarryFlag = (context.B & (1 << 7)) != 0;
-                    context.B <<= 1;
-                    context.B |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.B = RotateLeft(context, context.B);
                     break;
                 case 0x01:
-                    context.CarryFlag = (context.C & (1 << 7)) != 0;
-                    context.C <<= 1;
-                    context.C |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.C = RotateLeft(context, context.C);
                     break;
                 case 0x02:
-                    context.CarryFlag = (context.D & (1 << 7)) != 0;
-                    context.D <<= 1;
-                    context.D |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.D = RotateLeft(context, context.D);
                     break;
                 case 0x03:
-                    context.CarryFlag = (context.E & (1 << 7)) != 0;
-                    context.E <<= 1;
-                    context.E |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.E = RotateLeft(context, context.E);
                     break;
                 case 0x04:
-                    context.CarryFlag = (context.H & (1 << 7)) != 0;
-                    context.H <<= 1;
-                    context.H |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.H = RotateLeft(context, context.H);
                     break;
                 case 0x05:
-                    context.CarryFlag = (context.L & (1 << 7)) != 0;
-                    context.L <<= 1;
-                    context.L |= (byte)(context.CarryFlag ? 1 : 0);
+                    context.L = RotateLeft(context, context.L);
                     break;
                 case 0x06:
                     memory.Read(context.HL, out byte data);
-                    context.CarryFlag = (data & (1 << 7)) != 0;
-                    data <<= 1;
-                    data |= (byte)(context.CarryFlag ? 1 : 0);
+                    data = RotateLeft(context, data);
+                    memory.Write(context.HL, data);
+                    break;
+            }
+        }
+
+        public static void RL(CPUContext context, Instruction instruction, IMemoryMap memory)
+        {
+            context.SubstractFlag = false;
+            context.HalfCarryFlag = false;
+            switch (instruction.Opcode)
+            {
+                case 0x17:
+                    context.A = RotateLeftThroughCarry(context, context.A);
+                    break;
+                case 0x10:
+                    context.B = RotateLeftThroughCarry(context, context.B);
+                    break;
+                case 0x11:
+                    context.C = RotateLeftThroughCarry(context, context.C);
+                    break;
+                case 0x12:
+                    context.D = RotateLeftThroughCarry(context, context.D);
+                    break;
+                case 0x13:
+                    context.E = RotateLeftThroughCarry(context, context.E);
+                    break;
+                case 0x14:
+                    context.H = RotateLeftThroughCarry(context, context.H);
+                    break;
+                case 0x15:
+                    context.L = RotateLeftThroughCarry(context, context.L);
+                    break;
+                case 0x16:
+                    memory.Read(context.HL, out byte data);
+                    data = RotateLeftThroughCarry(context, data);
                     memory.Write(context.HL, data);
                     break;
             }
