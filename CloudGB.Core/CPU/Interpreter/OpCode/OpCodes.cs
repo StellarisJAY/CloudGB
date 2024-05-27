@@ -464,6 +464,34 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0xEF] = new(0xEF, "RST", "RST 28", 32, 0, RST);
             set[0xF7] = new(0xF7, "RST", "RST 30", 32, 0, RST);
             set[0xFF] = new(0xFF, "RST", "RST 38", 32, 0, RST);
+
+            string[] operands = ["B", "C", "D", "E", "H", "L", "(HL)", "A"];
+            int[] cycles = [8, 8, 8, 8, 8, 8, 16, 8];
+            // BITOPS
+            // BIT n,#
+            for (byte code = 0x40; code <= 0x7F; code++)
+            {
+                byte operand = (byte)(code & 0b111);
+                byte n = (byte)((code >> 3) & 0b111);
+                cb.SubInstructions[code] = new(code, "BIT", $"BIT {n},{operands[operand]}", cycles[operand], 0, BIT);
+            }
+
+            // RES n,#
+            for (byte code = 0x80; code <= 0xBF; code++)
+            {
+                byte operand = (byte)(code & 0b111);
+                byte n = (byte)((code >> 3) & 0b111);
+                cb.SubInstructions[code] = new(code, "RES", $"RES {n},{operands[operand]}", cycles[operand], 0, BitopReset);
+            }
+
+            // SET n,#
+            // code reaches 0xFF then 0x00
+            for (byte code = 0xC0; code > 0; code++)
+            {
+                byte operand = (byte)(code & 0b111);
+                byte n = (byte)((code >> 3) & 0b111);
+                cb.SubInstructions[code] = new(code, "SET", $"SET {n},{operands[operand]}", cycles[operand], 0, BitopSet);
+            }
         }
 
         public static void BenchmarkOpCodes(string file)
