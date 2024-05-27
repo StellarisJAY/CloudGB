@@ -6,50 +6,49 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
     {
         public static void AdcA(CPUContext context, Instruction instruction, IMemoryMap memory)
         {
-            byte operand = (byte)(context.CarryFlag ? 1 : 0);
+            byte operand;
             switch(instruction.Opcode)
             {
-                case 0x87:
-                    operand += context.A;
+                case 0x8F:
+                    operand = context.A;
                     break;
                 case 0x88:
-                    operand += context.B;
+                    operand = context.B;
                     break;
                 case 0x89:
-                    operand += context.C;
+                    operand = context.C;
                     break;
                 case 0x8A:
-                    operand += context.D;
+                    operand = context.D;
                     break;
                 case 0x8B:
-                    operand += context.E;
+                    operand = context.E;
                     break;
                 case 0x8C:
-                    operand += context.H;
+                    operand = context.H;
                     break;
                 case 0x8D:
-                    operand += context.L;
+                    operand = context.L;
                     break;
                 case 0x8E:
                     memory.Read(context.HL, out byte n);
-                    operand += n;
+                    operand = n;
                     break;
                 case 0xCE:
                     memory.Read((ushort)(context.PC + 1), out n);
-                    operand += n;
+                    operand = n;
                     context.PC += 1;
                     break;
+                default:
+                    throw new InvalidOperationException($"invalid opcode {instruction.Opcode,0:X2}");
             }
             context.PC += 1;
             byte old = context.A;
-            context.A += operand;
-            if (context.A == 0)
-            {
-                context.ZeroFlag = true;
-            }
+            context.A += (byte)(operand + (byte)(context.CarryFlag ? 1 : 0));
+            context.ZeroFlag = context.A == 0;
+            context.HalfCarryFlag = IsHalfCarry3To4(old, operand) || IsHalfCarry3To4((byte)(old+operand), (byte)(context.CarryFlag ? 1 : 0));
             context.SubstractFlag = false;
-            context.CarryFlag = IsCarry(old, context.A);
-            context.HalfCarryFlag = IsHalfCarry(old, context.A);
+            context.CarryFlag = IsCarry(old, operand) || IsCarry((byte)(old + operand), (byte)(context.CarryFlag ? 1 : 0));
         }
 
         public static void AddA(CPUContext context, Instruction instruction, IMemoryMap memory)
@@ -57,7 +56,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             byte operand = 0;
             switch (instruction.Opcode)
             {
-                case 0x8F:
+                case 0x87:
                     operand = context.A;
                     break;
                 case 0x80:
@@ -89,13 +88,10 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             context.PC += 1;
             byte old = context.A;
             context.A += operand;
-            if (context.A == 0)
-            {
-                context.ZeroFlag = true;
-            }
+            context.ZeroFlag = context.A == 0;
+            context.HalfCarryFlag = IsHalfCarry3To4(old, operand);
             context.SubstractFlag = false;
-            context.CarryFlag = IsCarry(old, context.A);
-            context.HalfCarryFlag = IsHalfCarry(old, context.A);
+            context.CarryFlag = IsCarry(old, operand);
         }
 
         public static void Inc(CPUContext context, Instruction instruction, IMemoryMap memory)
@@ -216,19 +212,22 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             {
                 case 0x09:
                     context.HL += context.BC;
+                    context.HalfCarryFlag = IsHalfCarry11To12(old, context.BC);
                     break;
                 case 0x19:
                     context.HL += context.DE;
+                    context.HalfCarryFlag = IsHalfCarry11To12(old, context.DE);
                     break;
                 case 0x29:
                     context.HL += context.HL;
+                    context.HalfCarryFlag = IsHalfCarry11To12(old, old);
                     break;
                 case 0x39:
                     context.HL += context.SP;
+                    context.HalfCarryFlag = IsHalfCarry11To12(old, context.SP);
                     break;
             }
             context.CarryFlag = old > context.HL;
-            context.HalfCarryFlag = (old & 0x8FF) > (context.HL & 0x8FF);
             context.PC += 1;
         }
 
@@ -310,10 +309,10 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                 default:
                     throw new InvalidOperationException($"unsupported opcode {instruction.Opcode,0:X2}");
             }
+            context.HalfCarryFlag = IsHalfBorrow4To3(context.A, op);
+            context.CarryFlag = IsBorrow(context.A, op);
             context.A -= op;
             context.ZeroFlag = context.A == 0;
-            context.CarryFlag = op > old;
-            context.HalfCarryFlag = (op & 0xF) > (old & 0xF);
             context.PC += 1;
         }
 
@@ -348,14 +347,19 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                 case 0x9E:
                     memory.Read(context.HL, out op);
                     break;
+                case 0xDE:
+                    memory.Read((ushort)(context.PC + 1), out op);
+                    context.PC += 1;
+                    break;
                 default:
                     throw new InvalidOperationException($"unsupported opcode {instruction.Opcode,0:X2}");
             }
-            op += (byte)(context.CarryFlag ? 1 : 0);
+            byte carry = (byte)(context.CarryFlag ? 1 : 0);
             context.A -= op;
+            context.A -= carry;
             context.ZeroFlag = context.A == 0;
-            context.CarryFlag = op > old;
-            context.HalfCarryFlag = (op & 0xF) > (old & 0xF);
+            context.CarryFlag = op > old || carry > (old - op);
+            context.HalfCarryFlag = (op & 0xF) > (old & 0xF) || (carry & 0xF) > ((old-op) & 0xF);
             context.PC += 1;
         }
 
@@ -533,11 +537,29 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             return (old & 0xF) > (res & 0xF);
         }
 
-        private static bool IsCarry(byte old, byte res)
+        private static bool IsCarry(byte op1, byte op2)
         {
-            return old > res;
+            return (((op1 & 0xFF) + (op2 & 0xFF)) & 0x100) != 0;
         }
 
+        private static bool IsHalfCarry3To4(byte op1, byte op2)
+        {
+            return (((op1 & 0xF) + (op2 & 0xF)) & 0x10) != 0;
+        }
         
+        private static bool IsHalfCarry11To12(ushort op1, ushort op2)
+        {
+            return (((op1 & 0xFFF) + (op2 & 0xFFF)) & 0x1000) != 0;
+        }
+
+        private static bool IsBorrow(byte op1, byte op2)
+        {
+            return op1 < op2;
+        }
+
+        private static bool IsHalfBorrow4To3(byte op1, byte op2)
+        {
+            return (op1 & 0xF) < (op2 & 0xF);
+        }
     }
 }

@@ -73,8 +73,40 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             sbyte signedOffset = (sbyte)data;
             context.ZeroFlag = false;
             context.SubstractFlag = false;
-            context.HL = (ushort)(context.SP + signedOffset);
-            context.PC += 2;
+            if (signedOffset >= 0)
+            {
+                context.HalfCarryFlag = IsHalfCarry3To4((byte)(context.SP & 0xFF), data);
+                context.CarryFlag = IsCarry((byte)(context.SP & 0xFF), data);
+                context.HL = (ushort)(context.SP + data);
+                context.PC += 2;
+            }else
+            {
+                context.HalfCarryFlag = !IsHalfBorrow4To3((byte)(context.SP & 0xFF), (byte)(-signedOffset));
+                context.CarryFlag = !IsBorrow((byte)(context.SP & 0xFF), (byte)(-signedOffset));
+                context.HL = (ushort)(context.SP + signedOffset);
+                context.PC += 2;
+            }
+        }
+
+        public static void AddSP(CPUContext context, Instruction instr, IMemoryMap memory)
+        {
+            memory.Read((ushort)(context.PC + 1), out byte data);
+            context.ZeroFlag = false;
+            context.SubstractFlag = false;
+            sbyte signedOffset = (sbyte)data;
+            if (signedOffset >= 0)
+            {
+                context.HalfCarryFlag = IsHalfCarry3To4((byte)(context.SP & 0xFF), data);
+                context.CarryFlag = IsCarry((byte)(context.SP & 0xFF), data);
+                context.SP += data;
+                context.PC += 2;
+            }else
+            {
+                context.HalfCarryFlag = !IsHalfBorrow4To3((byte)(context.SP & 0xFF), (byte)(-signedOffset));
+                context.CarryFlag = !IsBorrow((byte)(context.SP & 0xFF), (byte)(-signedOffset));
+                context.SP = (ushort)(context.SP + signedOffset);
+                context.PC += 2;
+            }
         }
     }
 }
