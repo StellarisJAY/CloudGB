@@ -23,9 +23,8 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x30] = new(0x30, "JR", "JR NC,n", 8, 1, JRCondition);
             set[0x38] = new(0x38, "JR", "JR C,n", 8, 1, JRCondition);
             // JP (HL)
-            set[0xE9] = new(0xE9, "JP", "JP (HL)", 16, 0, (ctx, instr, mem) => {
-                mem.Read16Bit(ctx.HL, out ushort addr);
-                ctx.PC = addr;
+            set[0xE9] = new(0xE9, "JP", "JP HL", 16, 0, (ctx, instr, mem) => {
+                ctx.PC = ctx.HL;
             });
             // JR n
             set[0x18] = new(0x18, "JR", "JR n", 16, 1, (ctx, instr, mem) => {
@@ -183,6 +182,8 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0xF8] = new(0xF8, "LD", "LD HL,SP,n", 12, 1, LoadHLSp);
             // LD (nn),SP
             set[0x08] = new(0x08, "LD", "LD (nn),SP", 20, 0, StoreSP);
+            // ADD SP,n
+            set[0xE8] = new(0xE8, "ADD", "ADD SP,n", 16, 1, AddSP);
 
             // PUSH r16
             set[0xF5] = new(0xF5, "PUSH", "PUSH AF", 16, 0, Push16);
@@ -238,6 +239,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x9D] = new(0x9D, "SBC", "SBC A,L", 4, 0, SBCA);
             set[0x9E] = new(0x9E, "SBC", "SBC A,(HL)", 8, 0, SBCA);
             set[0x9F] = new(0x9F, "SBC", "SBC A,A", 4, 0, SBCA);
+            set[0xDE] = new(0xDE, "SBC", "SBC A,n", 8, 1, SBCA);
 
 
             // AND A,n
@@ -327,8 +329,10 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             set[0x0F] = new(0x0F, "RRCA", "RRCA", 4, 0, RRCA);
             // RRA
             set[0x1F] = new(0x1F, "RRA", "RRA", 4, 0, RRA);
-
-
+            // RLCA
+            set[0x07] = new(0x07, "RLCA", "RLCA", 4, 0, RLCA);
+            // RLA
+            set[0x17] = new(0x17, "RLA", "RLA", 4, 0, RLA);
             // 0xCB
             Instruction cb = new(0xCB, null, null, 0, 1, RotatesAndShiftsCB)
             {
@@ -344,6 +348,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             cb.SubInstructions[0x36] = new(0x36, "SWAP", "SWAP (HL)", 16, 0, Swap);
             cb.SubInstructions[0x37] = new(0x37, "SWAP", "SWAP A", 8, 0, Swap);
 
+
             // 0xCB RLC
             cb.SubInstructions[0x0] = new(0x0, "RLC", "RLC B", 8, 0, RLC);
             cb.SubInstructions[0x1] = new(0x1, "RLC", "RLC C", 8, 0, RLC);
@@ -354,6 +359,16 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             cb.SubInstructions[0x6] = new(0x6, "RLC", "RLC (HL)", 16, 0, RLC);
             cb.SubInstructions[0x7] = new(0x7, "RLC", "RLC A", 8, 0, RLC);
 
+            // 0xCB RL
+            cb.SubInstructions[0x10] = new(0x10, "RL", "RL B", 8, 0, RL);
+            cb.SubInstructions[0x11] = new(0x11, "RL", "RL C", 8, 0, RL);
+            cb.SubInstructions[0x12] = new(0x12, "RL", "RL D", 8, 0, RL);
+            cb.SubInstructions[0x13] = new(0x13, "RL", "RL E", 8, 0, RL);
+            cb.SubInstructions[0x14] = new(0x14, "RL", "RL H", 8, 0, RL);
+            cb.SubInstructions[0x15] = new(0x15, "RL", "RL L", 8, 0, RL);
+            cb.SubInstructions[0x16] = new(0x16, "RL", "RL (HL)", 16, 0, RL);
+            cb.SubInstructions[0x17] = new(0x17, "RL", "RL A", 8, 0, RL);
+
             // 0xCB SRL
             cb.SubInstructions[0x38] = new(0x38, "SRL", "SRL B", 8, 0, SRL);
             cb.SubInstructions[0x39] = new(0x39, "SRL", "SRL C", 8, 0, SRL);
@@ -363,6 +378,27 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
             cb.SubInstructions[0x3D] = new(0x3D, "SRL", "SRL L", 8, 0, SRL);
             cb.SubInstructions[0x3E] = new(0x3E, "SRL", "SRL (HL)", 16, 0, SRL);
             cb.SubInstructions[0x3F] = new(0x3F, "SRL", "SRL A", 8, 0, SRL);
+
+            // 0xCB SRA
+            cb.SubInstructions[0x28] = new(0x28, "SRA", "SRA B", 8, 0, SRA);
+            cb.SubInstructions[0x29] = new(0x29, "SRA", "SRA C", 8, 0, SRA);
+            cb.SubInstructions[0x2A] = new(0x2A, "SRA", "SRA D", 8, 0, SRA);
+            cb.SubInstructions[0x2B] = new(0x2B, "SRA", "SRA E", 8, 0, SRA);
+            cb.SubInstructions[0x2C] = new(0x2C, "SRA", "SRA H", 8, 0, SRA);
+            cb.SubInstructions[0x2D] = new(0x2D, "SRA", "SRA L", 8, 0, SRA);
+            cb.SubInstructions[0x2E] = new(0x2E, "SRA", "SRA (HL)", 16, 0, SRA);
+            cb.SubInstructions[0x2F] = new(0x2F, "SRA", "SRA A", 8, 0, SRA);
+
+            // 0xCB SLA
+            cb.SubInstructions[0X20] = new(0x20, "SLA", "SLA B", 8, 0, SLA);
+            cb.SubInstructions[0X21] = new(0x21, "SLA", "SLA C", 8, 0, SLA);
+            cb.SubInstructions[0X22] = new(0x22, "SLA", "SLA D", 8, 0, SLA);
+            cb.SubInstructions[0X23] = new(0x23, "SLA", "SLA E", 8, 0, SLA);
+            cb.SubInstructions[0X24] = new(0x24, "SLA", "SLA H", 8, 0, SLA);
+            cb.SubInstructions[0X25] = new(0x25, "SLA", "SLA L", 8, 0, SLA);
+            cb.SubInstructions[0X26] = new(0x26, "SLA", "SLA (HL)", 16, 0, SLA);
+            cb.SubInstructions[0X27] = new(0x27, "SLA", "SLA A", 8, 0, SLA);
+
 
             // 0xCB RRC
             cb.SubInstructions[0x08] = new(0x08, "RRC", "RRC B", 8, 0, RRC);
@@ -413,6 +449,7 @@ namespace CloudGB.Core.CPU.Interpreter.OpCode
                 ctx.CarryFlag = true;
                 ctx.SubstractFlag = false;
                 ctx.HalfCarryFlag = false;
+                ctx.PC += 1;
             });
 
             set[0xF3] = new(0xF3, "DI", "DI", 4, 0, (ctx, instr, mem) => { ctx.InterruptEnable = false; ctx.PC += 1; });
