@@ -38,7 +38,7 @@ namespace CloudGB.Core.PPU
         {
             return address switch
             {
-                0xFF44 => (byte)LY,
+                0xFF44 => 0x90,
                 _ => 0,
             };
         }
@@ -80,10 +80,6 @@ namespace CloudGB.Core.PPU
                 _scanline = 0;
                 _dots = 0;
             }
-            //foreach(var consumer in FrameConsumers)
-            //{
-            //    consumer(_frame, out uint timeUsed);
-            //}
         }
 
         private void RenderBackground()
