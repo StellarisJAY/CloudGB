@@ -22,15 +22,18 @@ command.SetHandler((debugMode, file, traceMode, benchmark) =>
         return;
     }
     byte[] data = File.ReadAllBytes(file);
-    IEmulator emulator = new InterpreterEmulator(data, debugMode);
+    IEmulator emulator = new InterpreterEmulator(data, debugMode | traceMode);
     emulator.Reset();
     if (debugMode)
     {
         Debugger debugger = new();
         debugger.Step(emulator);
+    }else if (traceMode)
+    {
+        while(emulator.DebugStep(out int breakpoint)) {}
     }else
     {
-        emulator.Start();
+        while (emulator.DebugStep(out int breakpoint)) { }
     }
 }, debugOption, fileOption, traceOption, benchmarkOption);
 

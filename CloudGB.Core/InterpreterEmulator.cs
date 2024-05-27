@@ -2,7 +2,6 @@
 using CloudGB.Core.CPU.Interpreter;
 using CloudGB.Core.Memory;
 using CloudGB.Core.PPU;
-using System.Diagnostics;
 
 namespace CloudGB.Core
 {

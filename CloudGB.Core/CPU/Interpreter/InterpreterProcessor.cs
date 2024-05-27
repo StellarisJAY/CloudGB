@@ -60,14 +60,19 @@ namespace CloudGB.Core.CPU.Interpreter
 
         public void Reset()
         {
+            // A: 01,B: 00,C: 13,D: 00,E: D8,F: B0,H: 01,L: 4D,SP: FFFE
             _context.PC = 0x100;
             _context.LastCycles = 0;
             _context.TotalCycles = 0;
-            _context.SP = 0xE000;
-            _context.AF = 0;
-            _context.BC = 0;
-            _context.DE = 0;
-            _context.HL = 0;
+            _context.SP = 0xFFFE;
+            _context.A = 0x01;
+            _context.B = 0x00;
+            _context.C = 0x13;
+            _context.D = 0x00;
+            _context.E = 0xD8;
+            _context.F = 0xB0;
+            _context.H = 0x01;
+            _context.L = 0x4D;
             _context.Halt = false;
         }
 
@@ -91,7 +96,8 @@ namespace CloudGB.Core.CPU.Interpreter
 
         private void TraceExecution(Instruction instruction, CPUContext context, IMemoryMap memory)
         {
-            Console.WriteLine($"{FormatInstruction(instruction, context.PC)}\t{DumpContext()}");
+            Console.WriteLine(FormatInstruction(instruction, _context
+                .PC));
         }
 
         private string DumpContext()
@@ -112,30 +118,11 @@ namespace CloudGB.Core.CPU.Interpreter
 
         private string FormatInstruction(Instruction instruction, ushort pc)
         {
-            string? fullDesc = instruction.FullDescription;
-            if (string.IsNullOrEmpty(fullDesc)) fullDesc = instruction.Name;
-            if (instruction.Opcode == 0xCB)
-            {
-                _memory.Read((ushort)(pc + 1), out byte subCode);
-                var subInstr = instruction.SubInstructions?[subCode];
-                if (subInstr != null)
-                {
-                    fullDesc = subInstr.FullDescription;
-                }
-            }
-            string args = "     ";
-            if (instruction.Argc == 1)
-            {
-                _memory.Read((ushort)(pc + 1), out byte arg);
-                args = $"{arg,0:X2}   ";
-            }
-            else if (instruction.Argc == 2)
-            {
-                _memory.Read((ushort)(pc + 1), out byte low);
-                _memory.Read((ushort)(pc + 2), out byte high);
-                args = $"{low,0:X2} {high,0:X2}";
-            }
-            return $"{pc,0:X4}\t{instruction.Opcode,0:X2}  {fullDesc,-15} {args}";
+            _memory.Read((ushort)(pc + 0), out byte m1);
+            _memory.Read((ushort)(pc + 1), out byte m2);
+            _memory.Read((ushort)(pc + 2), out byte m3);
+            _memory.Read((ushort)(pc + 3), out byte m4);
+            return $"A:{_context.A,0:X2} F:{_context.F,0:X2} B:{_context.B,0:X2} C:{_context.C,0:X2} D:{_context.D,0:X2} E:{_context.E,0:X2} H:{_context.H,0:X2} L:{_context.L,0:X2} SP:{_context.SP,0:X4} PC:{_context.PC,0:X4} PCMEM:{m1,0:X2},{m2,0:X2},{m3,0:X2},{m4,0:X2}";
         }
 
         string IProcessor.DumpRegisters()
